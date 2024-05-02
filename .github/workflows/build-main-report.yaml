@@ -2,7 +2,7 @@ name: build-report
 run-name: ${{ github.actor }} is building a report
 on: [push]
 jobs:
-  check-bats-version:
+  build-report:
     runs-on: self-hosted
     steps:
       - name: Checkout
