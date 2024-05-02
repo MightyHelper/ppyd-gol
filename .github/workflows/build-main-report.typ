@@ -1,4 +1,4 @@
-name: Build report
+name: build-report
 run-name: ${{ github.actor }} is building a report
 on: [push]
 jobs:
