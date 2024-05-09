@@ -184,12 +184,9 @@ namespace v = r::views;
 std::vector<std::string> view_to_vec(auto view){
     std::vector<std::string> out_vec;
     for (auto strings: view) {
-        for (auto string: strings) {
-            std::stringstream a;
-            a << string;
-
-            out_vec.push_back(std::string(a.str()));
-        }
+        std::string str;
+        for (auto string: strings) str += string;
+        out_vec.push_back(str);
     }
     return out_vec;
 }
@@ -201,11 +198,6 @@ void Canvas<width, height>::load_file(const char *path) {
     if (!f) throw std::runtime_error(std::string("File ") + path + " not found.");
     buf << f.rdbuf();
     std::string data = buf.str();
-    // Using std::ranges:
-    // - Filter out lines that start with #
-    // - Join all lines into a single string, without delimiter, effectively removing newlines
-    // - Split on '$' character
-    // - materialize to a vector of strings
     auto out = data
                | v::split('\n')
                | v::filter([](auto &&line) { return *line.begin() != '#'; })
@@ -214,10 +206,6 @@ void Canvas<width, height>::load_file(const char *path) {
                | v::join
                | v::split('$');
     std::vector<std::string> out_vec = view_to_vec(out);
-//    std::cout << std::string(out) << std::endl;
-    for (auto string: out_vec) {
-        std::cout << string << std::endl;
-    }
 
 }
 
