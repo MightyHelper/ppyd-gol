@@ -2,12 +2,11 @@
 // Created by federico on 5/8/24.
 //
 
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <iostream>
+
 #include "golio.h"
-#include "utils.h"
+
+#define CLEAR_SCREEN "\033[2J"
+#define GOTO_0_0 "\033[0;0H"
 
 #define cchar(i) center[i*3] << center[i*3+1] << center[i*3+2]
 #define bchar(i) box[i*3] << box[i*3+1] << box[i*3+2]
@@ -15,9 +14,8 @@ const char *center = "▒█";
 const char *box = "┌─┐│█│└─┘";
 
 template<int width, int height>
-State<width, height>::State(){
+State<width, height>::State() = default;
 
-}
 template<int width, int height>
 std::bitset<width * height>::reference State<width, height>::at(int x, int y) const {
     return cells[clamped_coords(x, y)];
@@ -115,8 +113,18 @@ void State<width, height>::iter() {
 }
 
 
-void rle_decode_line(std::string str, std::ranges::view){
-
+template<int width, int height>
+void State<width, height>::rle_decode_line(std::string &str, int offset) {
+    std::string number;
+    for (char c: str) {
+        if (c >= '0' && c <= '9') {
+            number += c;
+        } else {
+            for (int i = 0; i < atoi(number.c_str()); i++, offset++) {
+                cells[offset] = c == 'b';
+            }
+        }
+    }
 }
 
 template<int width, int height>
@@ -133,15 +141,15 @@ void State<width, height>::load_file(const char *path) {
     // - enumerate each item
     // - for each item, run through rle_decode_line(item, X); where X is a view on 'buffer' starting at width*item_index
     auto out = data
-        | std::ranges::views::split('\n')
-        | std::ranges::views::filter([](auto &line) { return line[0] != '#'; })
-        | std::ranges::views::join
+               | std::ranges::views::split('\n')
+               | std::ranges::views::filter([](auto &line) { return line[0] != '#'; })
+               | std::ranges::views::join;
 //        | std::ranges::views::split('$')
 //        | std::ranges::views::enumerate
 //        | std::ranges::views::for_each([this](auto &item) {
 //            rle_decode_line(item, std::views::subrange(buffer, width * item.index, width * (item.index + 1)));
 //        });
-    cout << out;
+    std::cout << out;
 
 }
 
@@ -174,7 +182,7 @@ int State<width, height>::get_total(int x, int y) {
 
 template<int width, int height>
 int State<width, height>::step(int x, int y) {
-    int total = get_total<width, height>(x, y);
+    int total = get_total < width, height>(x, y);
     int current = at(x, y);
     if (current) {
         if (total < 2) return 0;

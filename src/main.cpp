@@ -1,18 +1,10 @@
-#include <iostream>
 #include <string>
-#include <iterator>
 
-#include <unistd.h>
-#include <sstream>
-#include <fstream>
 #include "golio.h"
-#include "utils.h"
 
-#define CLEAR_SCREEN "\033[2J"
-#define GOTO_0_0 "\033[0;0H"
+using namespace std;
 #define SIM_WIDTH 10
 #define SIM_HEIGHT 10
-using namespace std;
 
 
 
@@ -35,6 +27,7 @@ int main() {
     //     usleep(100000);
     // }
     // load_file("c2-orthogonal.rle");
+//    cout << "Hi" <<endl;
     State<1000,1000> state;
     state.load_file("mini.rle");
     state.print();

@@ -6,6 +6,12 @@
 #define GOL_GOLIO_H
 
 #include <bitset>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <iostream>
+#include <ranges>
+#include "utils.h"
 
 template<int width, int height>
 struct State {
@@ -31,6 +37,8 @@ struct State {
     void iter();
 
     void load_file(const char *path);
+
+    void rle_decode_line(std::string &str, int offset);
 
     std::string &advance_block(int x, int y, char last_type, std::string &count);
 
