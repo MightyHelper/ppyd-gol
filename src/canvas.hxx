@@ -65,9 +65,7 @@ Canvas<width, height>::Canvas() = default;
 
 template<int width, int height>
 std::bitset<width * height>::reference Canvas<width, height>::at(int x, int y) const {
-    int i = clamped_coords<width, height>(x, y);
-    std::cout << "[" << x << "," << y << "]" << std::endl;
-    return (*cells)[i];
+    return (*cells)[clamped_coords<width, height>(x, y)];
 }
 
 template<int width, int height>
@@ -197,21 +195,17 @@ void Canvas<width, height>::rle_decode_line(const std::string &str, int row) {
     int ib = 0;
     int offset = 0;
     std::string next = next_token(str, offset);
-    std::string peek = next_token(str, offset);
     while (offset < str.length()) {
-        if (!is_number(next[0])) {
-            if (is_number(peek[0])) {
-                generate(ib, row, next[0] == 'b', std::stoi(peek));
-                next = next_token(str, offset);
-                peek = next_token(str, offset);
-            } else {
-                generate(ib, row, next[0] == 'b', 1);
-                next = peek;
-                peek = next_token(str, offset);
-            }
+        if (is_number(next[0])) {
+            int n = std::stoi(next);
+            std::cout << "Number: " << n << std::endl;
+            next = next_token(str, offset);
+            generate(ib, row, next == "b", n);
+            next = next_token(str, offset);
         } else {
-            std::cout << "Error: " << next << " " << peek << std::endl;
-            throw std::runtime_error("Invalid RLE format");
+            std::cout << "Letter: " << next << std::endl;
+            generate(ib, row, next == "b", 1);
+            next = next_token(str, offset);
         }
     }
     std::cout << std::endl;
@@ -244,10 +238,12 @@ void Canvas<width, height>::load_file(const char *path) {
         std::cout << data << " " << idx<< std::endl;
         const std::string str = data.substr(1, idx - 1);
         rle_decode_line(str, row++);
+        print();
         data = data.substr(idx);
     }
     const std::string str = data.substr(1, data.length() - 1);
     rle_decode_line(str, row);
+    print();
 }
 
 template<int width, int height>
