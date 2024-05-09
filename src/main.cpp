@@ -1,7 +1,6 @@
 #include <string>
 
-#include "golio.h"
-
+#include "canvas.h"
 using namespace std;
 #define SIM_WIDTH 10
 #define SIM_HEIGHT 10
@@ -13,7 +12,7 @@ string &advance_block(int x, int y, char last_type, string &count);
 int main() {
     // cout << CLEAR_SCREEN;
     // init();
-    // spawn( 
+    // spawn(
     //     ".X..X\n"
     //     "X....\n"
     //     "X...X\n"
@@ -28,7 +27,7 @@ int main() {
     // }
     // load_file("c2-orthogonal.rle");
 //    cout << "Hi" <<endl;
-    State<1000,1000> state;
-    state.load_file("mini.rle");
-    state.print();
+    Canvas<1000,1000> canvas;
+    canvas.load_file("../data/mini.rle");
+//    canvas.print();
 }
