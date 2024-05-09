@@ -36,9 +36,7 @@ public:
 
     void load_file(const char *path);
 
-    void rle_decode_line(const std::string &str, int offset);
-
-    std::string &advance_block(int x, int y, char last_type, std::string &count);
+    void rle_decode_line(const std::string &str, int row);
 
     int get_total(int x, int y);
 
@@ -48,6 +46,8 @@ public:
 
 public:
     Canvas();
+
+    void generate(int &ib, int row, bool value, int count);
 };
 
 #define CLEAR_SCREEN "\033[2J"
@@ -65,7 +65,9 @@ Canvas<width, height>::Canvas() = default;
 
 template<int width, int height>
 std::bitset<width * height>::reference Canvas<width, height>::at(int x, int y) const {
-    return (*cells)[clamped_coords<width, height>(x, y)];
+    int i = clamped_coords<width, height>(x, y);
+    std::cout << "[" << x << "," << y << "]" << std::endl;
+    return (*cells)[i];
 }
 
 template<int width, int height>
@@ -161,18 +163,55 @@ void Canvas<width, height>::iter() {
 
 
 template<int width, int height>
+void Canvas<width, height>::generate(int& ib, int row, bool value, int count){
+    std::cout << "generate(" << ib << ", " << row << ", " << value << ", " << count << ")" << std::endl;
+    for (int i = 0; i < count; i++) {
+        std::cout << (value ? 'b' : 'o');
+        at(ib++, row) = value;
+    }
+}
+
+bool is_number(char c) {
+    return c >= '0' && c <= '9';
+}
+
+std::string next_token(const std::string &str, int &offset) {
+    // if number, read until non-number
+    // if letter just return letter
+    std::string out;
+    if (offset >= str.length()) return out;
+    if (is_number(str[offset])) {
+        while (is_number(str[offset])) {
+            out += str[offset++];
+        }
+    } else {
+        out = str[offset++];
+    }
+    return out;
+}
+
+template<int width, int height>
 void Canvas<width, height>::rle_decode_line(const std::string &str, int row) {
     std::string number;
     std::cout << row << "[" << str << "] " << ": ";
-    for (char c: str) {
-        if (c >= '0' && c <= '9') {
-            number += c;
-        } else {
-            for (int i = 0; i < atoi(number.c_str()); i++) {
-                std::cout << c;
-                at(i, row) = c == 'b';
+    int ib = 0;
+    int offset = 0;
+    std::string next = next_token(str, offset);
+    std::string peek = next_token(str, offset);
+    while (offset < str.length()) {
+        if (!is_number(next[0])) {
+            if (is_number(peek[0])) {
+                generate(ib, row, next[0] == 'b', std::stoi(peek));
+                next = next_token(str, offset);
+                peek = next_token(str, offset);
+            } else {
+                generate(ib, row, next[0] == 'b', 1);
+                next = peek;
+                peek = next_token(str, offset);
             }
-            number.clear();
+        } else {
+            std::cout << "Error: " << next << " " << peek << std::endl;
+            throw std::runtime_error("Invalid RLE format");
         }
     }
     std::cout << std::endl;
@@ -196,37 +235,20 @@ void Canvas<width, height>::load_file(const char *path) {
         data = data.substr(data.find('\n') + 1);
     }
     data = data.substr(data.find('\n') + 1);
+    // Remove '\n'
+    data.erase(std::remove(data.begin(), data.end(), '\n'), data.end());
     int row = 0;
     while (data[0] == '$') {
         unsigned long idx = data.find('$', 1);
-        if (idx == std::string::npos) {
-            const std::string str = data.substr(1, data.length() - 1);
-            rle_decode_line(str, row);
-            break;
-        }
-        data = data.substr(idx);
+        if (idx == std::string::npos) break;
+        std::cout << data << " " << idx<< std::endl;
         const std::string str = data.substr(1, idx - 1);
         rle_decode_line(str, row++);
+        data = data.substr(idx);
     }
+    const std::string str = data.substr(1, data.length() - 1);
+    rle_decode_line(str, row);
 }
-
-template<int width, int height>
-std::string &Canvas<width, height>::advance_block(int x, int y, char last_type, std::string &count) {
-    int i;
-    if (!count.empty()) {
-        i = atoi(count.c_str());
-    } else {
-        i = 1;
-    }
-    std::cout << i << "*" << last_type << std::endl;
-    int cnt = x + i;
-    for (; x < cnt; x++) {
-        at(x, y) = last_type == 'b';
-    }
-    count = "";
-    return count;
-}
-
 
 template<int width, int height>
 int Canvas<width, height>::get_total(int x, int y) {
