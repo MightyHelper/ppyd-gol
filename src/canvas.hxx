@@ -2,15 +2,14 @@
 // Created by federico on 5/9/24.
 //
 
-#ifndef GOL_CANVAS_H
-#define GOL_CANVAS_H
+#ifndef GOL_CANVAS_HXX
+#define GOL_CANVAS_HXX
 
 #include <bitset>
-#include "utils.h"
+#include "utils.hxx"
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <ranges>
 #include <vector>
 
 template<int width, int height>
@@ -37,7 +36,7 @@ public:
 
     void load_file(const char *path);
 
-    void rle_decode_line(std::string &str, int offset);
+    void rle_decode_line(const std::string &str, int offset);
 
     std::string &advance_block(int x, int y, char last_type, std::string &count);
 
@@ -50,9 +49,6 @@ public:
 public:
     Canvas();
 };
-//
-// Created by federico on 5/9/24.
-//
 
 #define CLEAR_SCREEN "\033[2J"
 #define GOTO_0_0 "\033[0;0H"
@@ -62,7 +58,7 @@ public:
 const char *center = "▒█";
 const char *box = "┌─┐│█│└─┘";
 
-#include "utils.h"
+#include "utils.hxx"
 
 template<int width, int height>
 Canvas<width, height>::Canvas() = default;
@@ -115,7 +111,7 @@ template<int width, int height>
 void Canvas<width, height>::raw_print_total() const {
     std::stringstream ss;
     for (int i = 0; i < height; i++) {
-        for (int o = 0; o < width; o++)ss << get_total(i, o) << " ";
+        for (int o = 0; o < width; o++) ss << get_total(i, o) << " ";
         ss << "\n";
     }
     std::cout << ss.str() << std::flush;
@@ -127,8 +123,8 @@ void Canvas<width, height>::init() {
     buffer = new std::bitset<width * height>;
     for (int i = 0; i < height; i++) {
         for (int o = 0; o < width; o++) {
-            cells[clamped_coords<width, height>(i, o)] = 0;
-            buffer[clamped_coords<width, height>(i, o)] = 0;
+            (*cells)[clamped_coords<width, height>(i, o)] = 0;
+            (*buffer)[clamped_coords<width, height>(i, o)] = 0;
         }
     }
 }
@@ -165,30 +161,21 @@ void Canvas<width, height>::iter() {
 
 
 template<int width, int height>
-void Canvas<width, height>::rle_decode_line(std::string &str, int offset) {
+void Canvas<width, height>::rle_decode_line(const std::string &str, int row) {
     std::string number;
+    std::cout << row << "[" << str << "] " << ": ";
     for (char c: str) {
         if (c >= '0' && c <= '9') {
             number += c;
         } else {
-            for (int i = 0; i < atoi(number.c_str()); i++, offset++) {
-                cells[offset] = c == 'b';
+            for (int i = 0; i < atoi(number.c_str()); i++) {
+                std::cout << c;
+                at(i, row) = c == 'b';
             }
+            number.clear();
         }
     }
-}
-
-namespace r = std::ranges;
-namespace v = r::views;
-
-std::vector<std::string> view_to_vec(auto view){
-    std::vector<std::string> out_vec;
-    for (auto strings: view) {
-        std::string str;
-        for (auto string: strings) str += string;
-        out_vec.push_back(str);
-    }
-    return out_vec;
+    std::cout << std::endl;
 }
 
 template<int width, int height>
@@ -198,15 +185,29 @@ void Canvas<width, height>::load_file(const char *path) {
     if (!f) throw std::runtime_error(std::string("File ") + path + " not found.");
     buf << f.rdbuf();
     std::string data = buf.str();
-    auto out = data
-               | v::split('\n')
-               | v::filter([](auto &&line) { return *line.begin() != '#'; })
-               | v::drop(1)
-               | v::transform([](auto &&rng) { return std::string_view(&*rng.begin(), r::distance(rng)); })
-               | v::join
-               | v::split('$');
-    std::vector<std::string> out_vec = view_to_vec(out);
-
+    init();
+    // - Split by newlines
+    // - Filter out comments
+    // - Drop the first line
+    // - Transform the range into a string_view
+    // - Join the string_views
+    // - Split by '$'
+    while (data[0] == '#') {
+        data = data.substr(data.find('\n') + 1);
+    }
+    data = data.substr(data.find('\n') + 1);
+    int row = 0;
+    while (data[0] == '$') {
+        unsigned long idx = data.find('$', 1);
+        if (idx == std::string::npos) {
+            const std::string str = data.substr(1, data.length() - 1);
+            rle_decode_line(str, row);
+            break;
+        }
+        data = data.substr(idx);
+        const std::string str = data.substr(1, idx - 1);
+        rle_decode_line(str, row++);
+    }
 }
 
 template<int width, int height>
@@ -220,7 +221,7 @@ std::string &Canvas<width, height>::advance_block(int x, int y, char last_type, 
     std::cout << i << "*" << last_type << std::endl;
     int cnt = x + i;
     for (; x < cnt; x++) {
-        cells[clamped_coords<width, height>(x, y)] = last_type == 'b';
+        at(x, y) = last_type == 'b';
     }
     count = "";
     return count;
@@ -255,4 +256,4 @@ void Canvas<width, height>::step_all() {
 }
 
 
-#endif //GOL_CANVAS_H
+#endif //GOL_CANVAS_HXX

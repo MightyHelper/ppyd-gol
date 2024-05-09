@@ -1,6 +1,6 @@
 #include <string>
 
-#include "canvas.h"
+#include "canvas.hxx"
 using namespace std;
 #define SIM_WIDTH 10
 #define SIM_HEIGHT 10
@@ -27,7 +27,7 @@ int main() {
     // }
     // load_file("c2-orthogonal.rle");
 //    cout << "Hi" <<endl;
-    Canvas<1000,1000> canvas;
+    Canvas<10, 10> canvas;
     canvas.load_file("../data/mini.rle");
-//    canvas.print();
+    canvas.print();
 }

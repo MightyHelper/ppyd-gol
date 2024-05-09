@@ -1,5 +1,5 @@
-#ifndef GOL_UTILS_H
-#define GOL_UTILS_H
+#ifndef GOL_UTILS_HXX
+#define GOL_UTILS_HXX
 
 constexpr int clamp(int v, int m, int M) {
     return v < m ? m : (v > M ? M : v);
@@ -14,4 +14,4 @@ constexpr int clamped_coords(int x, int y) {
     return coords<width>(clamp(x, 0, width - 1), clamp(y, 0, height - 1));
 }
 
-#endif //GOL_UTILS_H
+#endif //GOL_UTILS_HXX
