@@ -27,7 +27,12 @@ int main() {
     // }
     // load_file("c2-orthogonal.rle");
 //    cout << "Hi" <<endl;
-    Canvas<5, 9> canvas;
+    Canvas<9, 5> canvas;
+    int lb = 3;
+    canvas.init();
     canvas.load_file("../data/mini.rle");
+//    canvas.generate(lb, 0, true, 4);
+//    canvas.generate(lb, 0, false, 1);
+//    canvas.generate(lb, 0, true, 1);
     canvas.print();
 }

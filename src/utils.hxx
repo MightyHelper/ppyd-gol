@@ -7,7 +7,7 @@ constexpr int clamp(int v, int m, int M) {
 
 template<int width>
 constexpr int coords(int x, int y) {
-    return x * width + y;
+    return y * width + x;
 }
 template<int width, int height>
 constexpr int clamped_coords(int x, int y) {
