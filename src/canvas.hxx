@@ -31,6 +31,10 @@ public:
         return (*cells)[clamped_coords<width, height>(x, y)];
     }
 
+    std::bitset<width * height>::reference buf(int x, int y) const {
+        return (*buffer)[clamped_coords<width, height>(x, y)];
+    }
+
     void print() const {
         std::stringstream ss;
         ss << bchar(0);
@@ -131,11 +135,10 @@ public:
 
     void iter() {
         step_all();
-        void *temp = cells;
+        auto temp = cells;
         cells = buffer;
-        buffer = (int *) temp;
+        buffer = temp;
     }
-
 
 
     bool is_number(char c) {
@@ -174,10 +177,10 @@ public:
             }
             if (next == "!") break;
         }
-        if (is_number(next[0])){
+        if (is_number(next[0])) {
             std::cout << "Unexpected number at end of line" << std::endl;
             throw std::runtime_error("Unexpected number at end of line");
-        }else if (next != "!"){
+        } else if (next != "!") {
             generate(ib, row, next == "o", 1);
         }
     }
@@ -192,7 +195,7 @@ public:
     }
 
     int step(int x, int y) {
-        int total = get_total < width, height>(x, y);
+        int total = get_total(x, y);
         int current = at(x, y);
         if (current) {
             if (total < 2) return 0;
@@ -204,7 +207,7 @@ public:
     }
 
     void step_all() {
-        for (int i = 0; i < height; i++) for (int o = 0; o < width; o++) at(i, o) = step(i, o);
+        for (int x = 0; x < width; x++) for (int y = 0; y < height; y++) buf(x, y) = step(x, y);
     }
 
     Canvas() = default;
@@ -215,7 +218,6 @@ public:
         }
     }
 };
-
 
 
 #endif //GOL_CANVAS_HXX
