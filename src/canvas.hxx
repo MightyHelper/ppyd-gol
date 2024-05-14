@@ -31,6 +31,11 @@ public:
 			return (*cells)[clamped_coords<width, height>(x, y)];
 		}
 
+		[[nodiscard]] int at_or0(int x, int y) const {
+			if (x < 0 || x >= width || y < 0 || y >= height) return 0;
+			return (*cells)[clamped_coords<width, height>(x, y)];
+		}
+
 		std::bitset<width * height>::reference buf(int x, int y) const {
 			return (*buffer)[clamped_coords<width, height>(x, y)];
 		}
@@ -187,11 +192,11 @@ public:
 
 
 		int get_total(int x, int y) {
-			int total = 0;
+			int total = -at_or0(x, y);
 			for (int i = -1; i < 2; i++)
 				for (int o = -1; o < 2; o++)
-					total += at(x + i, y + o);
-			return total - at(x, y);
+					total += at_or0(x + i, y + o);
+			return total;
 		}
 
 		int step(int x, int y) {

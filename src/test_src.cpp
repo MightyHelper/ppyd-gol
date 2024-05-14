@@ -39,9 +39,97 @@ TEST(CanvasTest_init, BasicAssertions) {
 	EXPECT_NE(canvas.buffer, nullptr);
 	EXPECT_NE(canvas.cells, nullptr);
 	EXPECT_NE(canvas.cells, canvas.buffer);
-	for (int i=0; i<10*10; i++){
+	for (int i = 0; i < 10 * 10; i++) {
 		EXPECT_EQ((*canvas.cells)[i], 0);
 		EXPECT_EQ((*canvas.buffer)[i], 0);
 	}
 }
 
+TEST(CanvasTest_rle_decode_line, BasicAssertions) {
+	Canvas<10, 10> canvas{};
+	canvas.init();
+	canvas.rle_decode_line("3o2b", 0);
+#define check(x, v) EXPECT_EQ(canvas.at(x, 0), v)
+	check(0, 1);
+	check(1, 1);
+	check(2, 1);
+	check(3, 0);
+	check(4, 0);
+	check(5, 0);
+	canvas.rle_decode_line("3b2o", 0);
+	check(0, 0);
+	check(1, 0);
+	check(2, 0);
+	check(3, 1);
+	check(4, 1);
+	check(5, 0);
+	canvas.rle_decode_line("o3b2o", 0);
+	check(0, 1);
+	check(1, 0);
+	check(2, 0);
+	check(3, 0);
+	check(4, 1);
+	check(5, 1);
+	check(6, 0);
+#undef check
+}
+
+TEST(CanvasTest_load_file, BasicAssertions) {
+	Canvas<10, 10> canvas{}, canvas2{};
+	canvas.load_file("../data/mini.rle");
+	canvas2.init();
+	canvas2.spawn(
+		".X...XXX.\n"
+		".XXX..X..\n"
+		"..X......",
+		0, 0
+	);
+	for (int i = 0; i < 10 * 10; i++) {
+		EXPECT_EQ((*canvas.cells)[i], (*canvas2.cells)[i]);
+	}
+}
+
+TEST(CanvasTest_get_total, BasicAssertions) {
+	Canvas<10, 10> canvas{};
+	canvas.init();
+	canvas.spawn(
+		".X...XXX.\n"
+		".XXX..X..\n"
+		"..X......",
+		0, 0
+	);
+	canvas.print();
+	EXPECT_EQ(canvas.get_total(0, 0), 2);
+	EXPECT_EQ(canvas.get_total(1, 0), 2);
+	EXPECT_EQ(canvas.get_total(2, 0), 4);
+	EXPECT_EQ(canvas.get_total(3, 0), 2);
+	EXPECT_EQ(canvas.get_total(0, 1), 2);
+}
+
+TEST(CanvasTest_iter, BasicAssertions) {
+	Canvas<10, 10> canvas{}, canvas2{};
+	canvas.load_file("../data/mini.rle");
+	canvas2.init();
+	canvas2.spawn(
+		".X...XXX.\n"
+		".XXX..X..\n"
+		"..X......",
+		0, 0
+	);
+	for (int i = 0; i < 10 * 10; i++) {
+		EXPECT_EQ((*canvas.cells)[i], (*canvas2.cells)[i]);
+	}
+	canvas.iter();
+	canvas2.init();
+	canvas2.spawn(
+		".X...XXX.\n"
+		".X.X.XXX.\n"
+		".XXX.....",
+		0, 0
+	);
+	canvas.print();
+	canvas2.print();
+	for (int i = 0; i < 10 * 10; i++) {
+		EXPECT_EQ((*canvas.cells)[i], (*canvas2.cells)[i]);
+	}
+}
