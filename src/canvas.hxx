@@ -14,7 +14,8 @@
 
 #define cchar(i) center[i*3] << center[i*3+1] << center[i*3+2]
 #define bchar(i) box[i*3] << box[i*3+1] << box[i*3+2]
-const char *center = "▒█";
+//const char *center = "▒█";
+const char *center = "░█";
 const char *box = "┌─┐│█│└─┘";
 #define CLEAR_SCREEN "\033[2J"
 #define GOTO_0_0 "\033[0;0H"
@@ -170,7 +171,6 @@ public:
 		}
 
 		void rle_decode_line(const std::string &str, int row) {
-			std::cout << str << std::endl;
 			std::string number;
 			int ib = 0;
 			int offset = 0;
