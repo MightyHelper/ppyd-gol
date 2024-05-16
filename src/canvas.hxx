@@ -87,6 +87,10 @@ public:
 			}
 		}
 
+		void load_file(std::string str) {
+			load_file(str.c_str());
+		}
+
 		void load_file(const char *path) {
 			std::ifstream f(path);
 			std::stringstream buf;
