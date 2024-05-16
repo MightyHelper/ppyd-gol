@@ -104,13 +104,13 @@ public:
 			data = data.substr(data.find('\n') + 1);
 			data.erase(std::remove(data.begin(), data.end(), '\n'), data.end());
 			int row = 0;
-			while (data[0] == '$') {
+			do {
 				unsigned long idx = data.find('$', 1);
 				if (idx == std::string::npos) break;
 				const std::string str = data.substr(1, idx - 1);
 				rle_decode_line(str, row++);
 				data = data.substr(idx);
-			}
+			} while (data[0] == '$');
 			const std::string str = data.substr(1, data.length() - 1);
 			rle_decode_line(str, row);
 		}
@@ -170,6 +170,7 @@ public:
 		}
 
 		void rle_decode_line(const std::string &str, int row) {
+			std::cout << str << std::endl;
 			std::string number;
 			int ib = 0;
 			int offset = 0;

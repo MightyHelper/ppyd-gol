@@ -10,21 +10,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 # Add the executable
-add_executable(gol src/main.cpp
+add_executable(
+        gol src/main.cpp
         src/utils.hxx
         src/canvas.hxx
 )
+
 target_link_libraries(gol PRIVATE MPI::MPI_CXX)
 enable_testing()
-
-add_executable(
-        test_src
-        src/test_src.cpp
-)
-target_link_libraries(
-        test_src
-        GTest::gtest_main
-)
-
+add_executable(test_src src/test_src.cpp)
+target_link_libraries(test_src GTest::gtest_main)
 include(GoogleTest)
 gtest_discover_tests(test_src)
