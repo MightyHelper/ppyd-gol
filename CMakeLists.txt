@@ -14,6 +14,7 @@ add_executable(
         gol src/main.cpp
         src/utils.hxx
         src/canvas.hxx
+        src/main_par.cpp
 )
 
 target_link_libraries(gol PRIVATE MPI::MPI_CXX)
