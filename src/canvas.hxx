@@ -29,16 +29,16 @@ public:
 		std::bitset<width * height> *buffer;
 
 		std::bitset<width * height>::reference at(int x, int y) const {
-			return (*cells)[clamped_coords<width, height>(x, y)];
+			return (*cells)[clamped_coords(width, height, x, y)];
 		}
 
 		[[nodiscard]] int at_or0(int x, int y) const {
 			if (x < 0 || x >= width || y < 0 || y >= height) return 0;
-			return (*cells)[clamped_coords<width, height>(x, y)];
+			return (*cells)[clamped_coords(width, height, x, y)];
 		}
 
 		std::bitset<width * height>::reference buf(int x, int y) const {
-			return (*buffer)[clamped_coords<width, height>(x, y)];
+			return (*buffer)[clamped_coords(width, height, x, y)];
 		}
 
 		void print() const {
@@ -128,7 +128,7 @@ public:
 		void raw_print_idx() const {
 			std::stringstream ss;
 			for (int i = 0; i < height; i++) {
-				for (int o = 0; o < width; o++) ss << clamped_coords<width, height>(i, o) << " ";
+				for (int o = 0; o < width; o++) ss << clamped_coords(width, height, i, o) << " ";
 				ss << "\n";
 			}
 			std::cout << ss.str() << std::flush;
