@@ -23,6 +23,8 @@ void print_all2();
 
 void print_all3();
 
+void send_request(vector<MPI_Request> &send_requests, int dest, int tag, MPI_Request &req, bool &send);
+
 int world_size;
 int world_rank;
 int cart_coords[2];
@@ -30,27 +32,15 @@ MPI_Comm comm2d;
 int dims[2] = {0, 0};
 int periods[2] = {1, 1};
 int relative[9] = {-1, -1, -1, -1, -1, -1, -1, -1, -1};
-const int width = 8;
-const int height = 8;
+const int width = 3;
+const int height = 3;
 #define ANALYSIS_RANK 4
 Canvas<width + 2, height + 2> canvas{};
-
-int positive_modulo(int i, int n) {
-    return (i % n + n) % n;
-}
 
 struct Coords {
     int x;
     int y;
 
-    [[nodiscard]] Coords left      () const { return Coords{positive_modulo(x + width, width + 2), positive_modulo(y         , height + 2)}; }
-    [[nodiscard]] Coords right     () const { return Coords{positive_modulo(x - width, width + 2), positive_modulo(y         , height + 2)}; }
-    [[nodiscard]] Coords up        () const { return Coords{positive_modulo(x        , width + 2), positive_modulo(y + height, height + 2)}; }
-    [[nodiscard]] Coords down      () const { return Coords{positive_modulo(x        , width + 2), positive_modulo(y - height, height + 2)}; }
-    [[nodiscard]] Coords up_right  () const { return Coords{positive_modulo(x - width, width + 2), positive_modulo(y + height, height + 2)}; }
-    [[nodiscard]] Coords up_left   () const { return Coords{positive_modulo(x + width, width + 2), positive_modulo(y + height, height + 2)}; }
-    [[nodiscard]] Coords down_right() const { return Coords{positive_modulo(x - width, width + 2), positive_modulo(y - height, height + 2)}; }
-    [[nodiscard]] Coords down_left () const { return Coords{positive_modulo(x + width, width + 2), positive_modulo(y - height, height + 2)}; }
     [[nodiscard]] Coords to_global() const {
         return Coords{x + cart_coords[0] * width, y + cart_coords[1] * height};
     }
@@ -64,45 +54,97 @@ struct Coords {
     }
 };
 
-void comunicate(const Coords &get_data_from, const Coords &put_data_in, int send_data_to, int receive_data_from) {
-    bool send_data = canvas.at(get_data_from.x, get_data_from.y);
-    bool recv_data;
-    if (send_data){
-        cout << "Rank " << world_rank << " sending data to " << send_data_to << " from " << get_data_from << " to " << put_data_in << endl;
-    }
-    MPI_Sendrecv(
-            &send_data, 1, MPI_CXX_BOOL, relative[send_data_to], 0,
-            &recv_data, 1, MPI_CXX_BOOL, relative[receive_data_from], 0,
-            comm2d, MPI_STATUS_IGNORE
-    );
-    canvas.at(put_data_in.y, put_data_in.x) = recv_data;
-}
-
 void comunicate() {
     // 0 1 2
     // 3 4 5
     // 6 7 8
-    // Communicate top canvas row to node above
+    // Iterate over the border and post an async send with tag [global_x, global_y]
+    // Then receive the data and update the buffer
+    vector<MPI_Request> send_requests;
+    vector<MPI_Request> recv_requests;
+    vector<bool> recv_data;
+    vector<Coords> recv_coords;
+
     for (int i = 1; i < width + 1; i++) {
-        Coords top_row{i, 1};
-        Coords bottom_row{i, 8};
-        comunicate(top_row, top_row.up(), 1, 7);
-        comunicate(bottom_row, bottom_row.down(), 7, 1);
+        for (int o = 1; o < height + 1; o++) {
+            Coords c{i, o};
+            Coords g = c.to_global();
+            int sum = (c.x == 1 ? 1 : 0) + (c.y == 1 ? 1 : 0) + (c.x == width ? 1 : 0) + (c.y == height ? 1 : 0);
+            if (sum == 0) continue;
+            MPI_Request req;
+            bool send = canvas.at(c.x, c.y);
+            int dest = 0;
+            int tag = g.x * width * dims[0] + g.y;
+            // Sides
+            if (c.x == 1) {
+                dest = relative[1];
+                send_request(send_requests, dest, tag, req, send);
+            }
+            if (c.x == width) {
+                dest = relative[3];
+                send_request(send_requests, dest, tag, req, send);
+            }
+            if (c.y == 1) {
+                dest = relative[7];
+                send_request(send_requests, dest, tag, req, send);
+            }
+            if (c.y == height) {
+                dest = relative[5];
+                send_request(send_requests, dest, tag, req, send);
+            }
+            // Corners
+            if (c.x == 1 && c.y == 1) {
+                dest = relative[0];
+                send_request(send_requests, dest, tag, req, send);
+            }
+            if (c.x == 1 && c.y == height) {
+                dest = relative[2];
+                send_request(send_requests, dest, tag, req, send);
+            }
+            if (c.x == width && c.y == 1) {
+                dest = relative[6];
+                send_request(send_requests, dest, tag, req, send);
+            }
+            if (c.x == width && c.y == height) {
+                dest = relative[8];
+                send_request(send_requests, dest, tag, req, send);
+            }
+        }
     }
-//    for (int i = 1; i < height + 1; i++) {
-//        Coords left_column{8, i};
-//        Coords right_column{1, i};
-//        comunicate(left_column, left_column.left(), 3, 5);
-//        comunicate(right_column, right_column.right(), 5, 3);
-//    }
-//    Coords bottom_right{1, 1};
-//    Coords top_left{8, 8};
-//    Coords top_right{1, 8};
-//    Coords bottom_left{8, 1};
-//    comunicate(bottom_right, bottom_right.down_right(), 8, 0);
-//    comunicate(top_left, top_left.up_left(), 0, 8);
-//    comunicate(top_right, top_right.up_right(), 2, 6);
-//    comunicate(bottom_left, bottom_left.down_left(), 6, 2);
+    for (int i = 0; i < width + 2; i++) {
+        for (int o = 0; o < height + 2; o++) {
+            Coords c{i, o};
+            Coords g = c.to_global();
+            if (c.x != 0 && c.y != 0 && c.x != width + 1 && c.y != height + 1) continue;
+            bool recv;
+            MPI_Request req;
+            int tag = g.x * width * dims[0] + g.y;
+            cout << "> Rank: " << world_rank << " Waiting for Tag: " << tag << endl;
+            MPI_Irecv(&recv, 1, MPI_CXX_BOOL, MPI_ANY_SOURCE, tag, comm2d, &req);
+            recv_requests.push_back(req);
+            recv_data.push_back(recv);
+            recv_coords.push_back(c);
+        }
+    }
+    cout << "Expected send count" << (width + height) * 2 + 4 << endl;
+    cout << "Expected recv count" << (width + height) * 2 + 4 << endl;
+    cout << "Send count" << send_requests.size() << endl;
+    cout << "Recv count" << recv_requests.size() << endl;
+    cout << "T" << world_rank << " Waiting for all" << endl;
+    MPI_Waitall((int) recv_requests.size(), recv_requests.data(), MPI_STATUSES_IGNORE);
+    cout << "T" << world_rank << " Donne" << endl;
+    for (int i = 0; i < recv_requests.size(); i++) {
+        cout << "Rank: " << world_rank << " Waiting for recv" << endl;
+        canvas.at(recv_coords[i].x, recv_coords[i].y) = recv_data[i];
+    }
+    MPI_Waitall((int) send_requests.size(), send_requests.data(), MPI_STATUSES_IGNORE);
+}
+
+void send_request(vector<MPI_Request> &send_requests, int dest, int tag, MPI_Request &req, bool &send) {
+    cout << "Rank: " << world_rank << " Sending to: " << dest << " Tag: " << tag << " Data: " << send
+<< endl;
+    MPI_Isend(&send, 1, MPI_CXX_BOOL, dest, tag, comm2d, &req);
+    send_requests.push_back(req);
 }
 
 
@@ -121,8 +163,8 @@ int main() {
 //            canvas.at(i, o) = glob.x == 8 && glob.y == 7;
 //        }
 //    }
-    if (world_rank == ANALYSIS_RANK){
-        canvas.at(4, 1) = true;
+    if (world_rank == ANALYSIS_RANK) {
+        canvas.at(1, 1) = true;
     }
 //	}
 //    print_all3();
@@ -131,8 +173,8 @@ int main() {
 ////        canvas.at(1, 5) = true;
 ////	}
     comunicate();
-    usleep(1000000);
-    print_all3();
+//    usleep(1000000);
+//    print_all3();
 //    usleep(1000000);
 //    comunicate();
 //    print_all2();
@@ -185,8 +227,8 @@ void print_all3() {
     const int dy = 4;
     Canvas<width * dx, height * dy> canvas2{};
     canvas2.init();
-    for (int i = 0; i < width+2; i++) {
-        for (int o = 0; o < height+2; o++) {
+    for (int i = 0; i < width + 2; i++) {
+        for (int o = 0; o < height + 2; o++) {
             Coords c{i, o};
             Coords g = c.to_super_global();
             cout << "\033[" << (g.x) + 1 << ";" << (g.y * 2) + 1 << "H" << "\033[3" << world_rank + 1 << "m"
