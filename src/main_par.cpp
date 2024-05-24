@@ -72,8 +72,11 @@ struct CoordsValue{
 MPI_Datatype MPI_CoordsValue;
 MPI_Datatype MPI_Coords;
 
-void validateMPIoutput(int output){
+//#define validateMPIoutput(value) cout << "Validate " << __LINE__ << " " << __FUNCTION__ << endl; _validateMPIoutput(value)
+#define validateMPIoutput(value) _validateMPIoutput(value)
+void _validateMPIoutput(int output){
 	if (output != MPI_SUCCESS) {
+        cout << "Error: " << output << endl;
 		char error_string[MPI_MAX_ERROR_STRING];
 		int length_of_error_string;
 		MPI_Error_string(output, error_string, &length_of_error_string);
@@ -94,38 +97,11 @@ void init_datatypes() {
 }
 
 
-void send_request(vector<MPI_Request> &send_requests, int dest, CoordsValue cv);
+void send_request(vector<MPI_Request*> &send_requests, int dest, CoordsValue cv);
 
-void recv_request(vector<MPI_Request> &recv_requests, vector<CoordsValue *> &recv_data);
+void recv_request(vector<MPI_Request*> &recv_requests, vector<CoordsValue *> &recv_data);
 
-void MPI_Manual_Waitall(int count, MPI_Request *requests, MPI_Status *statuses) {
-	// Wait for each using waitAny
-	int done = 0;
-	while (done < count) {
-		int index;
-		cout << "(" << world_rank << ") " << "Waiting for any " << done + 1 << "/" << count << endl;
-		MPI_Status status;
-		int err = MPI_Waitany(count, requests, &index, &status);
-		if (err != MPI_SUCCESS) {
-			char error_string[MPI_MAX_ERROR_STRING];
-			int length_of_error_string;
-			MPI_Error_string(err, error_string, &length_of_error_string);
-			printf("MPI_Waitany error: %s\n", error_string);
-			// Handle the error appropriately, e.g., abort
-			MPI_Abort(MPI_COMM_WORLD, err);
-		}
-		int error_code = status.MPI_ERROR;
-		if (error_code != MPI_SUCCESS) {
-			char error_string[MPI_MAX_ERROR_STRING];
-			int length_of_error_string;
-			MPI_Error_string(error_code, error_string, &length_of_error_string);
-			printf("MPI Error: %s\n", error_string);
-		}
-
-		cout << "Done [" << index << "] " << "src:" << status.MPI_SOURCE << " tag:" << status.MPI_TAG << " error:" << status.MPI_ERROR << endl;
-		done++;
-	}
-}
+void _simple_test();
 
 void comunicate() {
 	// 0 1 2
@@ -133,8 +109,8 @@ void comunicate() {
 	// 6 7 8
 	// Iterate over the border and post an async send with tag [global_x, global_y]
 	// Then receive the data and update the buffer
-	vector<MPI_Request> send_requests;
-	vector<MPI_Request> recv_requests;
+	vector<MPI_Request*> send_requests;
+	vector<MPI_Request*> recv_requests;
 	vector<CoordsValue*> recv_data;
 
 	for (int i = 1; i < width + 1; i++) {
@@ -142,7 +118,6 @@ void comunicate() {
 			Coords c{i, o};
 			bool send = canvas.at(c.x, c.y);
 			Coords g = c.to_global();
-			int tag = (int) c.to_global_tag();
 			// Sides
 			if (c.x == 1) send_request(send_requests, relative[3], CoordsValue{g, send});
 			if (c.x == width) send_request(send_requests, relative[5], CoordsValue{g, send});
@@ -168,43 +143,42 @@ void comunicate() {
 	cout << "Recv count" << recv_requests.size() << endl;
 	cout << "T" << world_rank << " Waiting for all" << endl;
 //	MPI_Waitall((int) recv_requests.size(), recv_requests.data(), MPI_STATUSES_IGNORE);
-	MPI_Manual_Waitall((int) recv_requests.size(), recv_requests.data(), MPI_STATUSES_IGNORE);
+    MPI_Request reqs[recv_requests.size()];
+    for (int i = 0; i < recv_requests.size(); i++) {
+        reqs[i] = *recv_requests[i];
+    }
+	MPI_Waitall((int) recv_requests.size(), reqs, MPI_STATUSES_IGNORE);
 
 	cout << "T" << world_rank << " Donne" << endl;
 	for (int i = 0; i < recv_requests.size(); i++) {
 		cout << "Rank: " << world_rank << " got " << recv_data[i]->pos << " " << recv_data[i]->value << endl;
 		canvas.at(recv_data[i]->pos.x, recv_data[i]->pos.y) = recv_data[i]->value;
 	}
-	MPI_Manual_Waitall((int) send_requests.size(), send_requests.data(), MPI_STATUSES_IGNORE);
+    MPI_Request reqs2[send_requests.size()];
+    for (int i = 0; i < send_requests.size(); i++) {
+        reqs2[i] = *send_requests[i];
+    }
+	MPI_Waitall((int) send_requests.size(), reqs2, MPI_STATUSES_IGNORE);
 	// TODO: Free recv_data items
 }
 
 
-void recv_request(vector<MPI_Request> &recv_requests, vector<CoordsValue *> &recv_data) {
+void recv_request(vector<MPI_Request*> &recv_requests, vector<CoordsValue *> &recv_data) {
 	auto *cv = new CoordsValue;
-	MPI_Request req;
-	int irecv = MPI_Irecv(cv, 1, MPI_CoordsValue, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &req);
-	if (irecv != MPI_SUCCESS) {
-		char error_string[MPI_MAX_ERROR_STRING];
-		int length_of_error_string;
-		MPI_Error_string(irecv, error_string, &length_of_error_string);
-		fprintf(stderr, "MPI_Irecv error: %s\n", error_string);
-		// Handle the error appropriately
-	}
+	auto req = new MPI_Request;
+    cout << "Rank: " << world_rank << " waiting for data" << endl;
+//	int irecv = MPI_Irecv(cv, 1, MPI_CoordsValue, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &req);
+	int irecv = MPI_Irecv(cv, 1, MPI_CoordsValue, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, req);
+    validateMPIoutput(irecv);
 	recv_requests.push_back(req);
 	recv_data.push_back(cv);
 }
 
-void send_request(vector<MPI_Request> &send_requests, int dest, CoordsValue cv) {
-	MPI_Request req;
-	int ierr = MPI_Isend(&cv, 1, MPI_CoordsValue, dest, 0, MPI_COMM_WORLD, &req);
-	if (ierr != MPI_SUCCESS) {
-		char error_string[MPI_MAX_ERROR_STRING];
-		int length_of_error_string;
-		MPI_Error_string(ierr, error_string, &length_of_error_string);
-		fprintf(stderr, "MPI_Isend error: %s\n", error_string);
-		// Handle the error appropriately
-	}
+void send_request(vector<MPI_Request*> &send_requests, int dest, CoordsValue cv) {
+	auto *req = new MPI_Request ;
+    cout << "Rank: " << world_rank << " to " << dest << endl;
+	int ierr = MPI_Isend(&cv, 1, MPI_CoordsValue, dest, 0, MPI_COMM_WORLD, req);
+    validateMPIoutput(ierr);
 	send_requests.push_back(req);
 }
 
@@ -214,47 +188,39 @@ int main() {
 	init_datatypes();
 	create_topo();
 	init_relative();
-//    debug_ranks();
-//	if (world_rank == ANALYSIS_RANK)
-//		debug_neighbors();
+//    _simple_test();
 	canvas.init();
-//	if (world_rank != ANALYSIS_RANK) {
-//    for (int i = 0; i < 10; i++) {
-//        for (int o = 0; o < 10; o++) {
-//            const Coords &glob = Coords{i, o}.to_global();
-//            canvas.at(i, o) = glob.x == 8 && glob.y == 7;
-//        }
-//    }
 	if (world_rank == ANALYSIS_RANK) {
 		canvas.at(1, 1) = true;
 	}
-//	}
-//    print_all3();
-////	if (world_rank == ANALYSIS_RANK) {
-//////		canvas.load_file("data/mini.rle");
-////        canvas.at(1, 5) = true;
-////	}
-    debug_neighbors();
-	comunicate();
-//    usleep(1000000);
-//	print_all2();
-//	usleep(1000000);
-//	print_all3();
-//	comunicate();
-//    print_all2();
-//    usleep(1000000);
-
-//	for (int i = 0; i < 10; i++) {
-//		comunicate();
-//		print_all2();
-//		canvas.iter();
-//	}
+    comunicate();
 	MPI_Barrier(MPI_COMM_WORLD);
-//    usleep(1000000);
-//	cout << '\n' << '\n';
-//	print_all();
 	MPI_Finalize();
 	return 0;
+}
+
+
+void _simple_test() {
+    if (world_rank == 0) {
+        MPI_Request reqs2[10]{};
+        for(int i=0; i<10; i++) {
+            auto req = new MPI_Request;
+            int can = 2;
+            validateMPIoutput(MPI_Isend(&can, 1, MPI_INT, 1, 0, MPI_COMM_WORLD, req));
+            reqs2[i]=(*req);
+        }
+        validateMPIoutput(MPI_Waitall(10, reqs2, MPI_STATUSES_IGNORE));
+    }
+    if (world_rank == 1) {
+        MPI_Request reqs[10]{};
+        for(int i=0; i<10; i++) {
+            int can2 = 0;
+            auto req2 = new MPI_Request ;
+            validateMPIoutput(MPI_Irecv(&can2, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, req2));
+            reqs[i]=*req2;
+        }
+        validateMPIoutput(MPI_Waitall(10, reqs, MPI_STATUSES_IGNORE));
+    }
 }
 
 void print_all() {
