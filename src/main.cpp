@@ -31,7 +31,7 @@ Args parse(int argc, const char* argv[]){
 void program_main(int argc, const char **argv) {
 	Args args = parse(argc, argv);
 	Canvas<S_WIDTH, S_HEIGHT> canvas{};
-	canvas.load_file(args.file);
+	canvas.load_file(args.file, 0, 0);
 	if (PRINT) cout << CLEAR_SCREEN << flush;
 	double its = 0;
 	// use chrono to get the current time

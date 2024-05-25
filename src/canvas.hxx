@@ -88,11 +88,11 @@ public:
 			}
 		}
 
-		void load_file(std::string str) {
-			load_file(str.c_str());
+		void load_file(std::string str, int dx, int dy) {
+			load_file(str.c_str(), dx, dy);
 		}
 
-		void load_file(const char *path) {
+		void load_file(const char *path, int dx, int dy) {
 			std::ifstream f(path);
 			std::stringstream buf;
 			if (!f) throw std::runtime_error(std::string("File ") + path + " not found.");
@@ -104,16 +104,16 @@ public:
 			}
 			data = data.substr(data.find('\n') + 1);
 			data.erase(std::remove(data.begin(), data.end(), '\n'), data.end());
-			int row = 0;
+			int row = dy;
 			do {
 				unsigned long idx = data.find('$', 1);
 				if (idx == std::string::npos) break;
 				const std::string str = data.substr(1, idx - 1);
-				rle_decode_line(str, row++);
+				rle_decode_line(str, row++, dx);
 				data = data.substr(idx);
 			} while (data[0] == '$');
 			const std::string str = data.substr(1, data.length() - 1);
-			rle_decode_line(str, row);
+			rle_decode_line(str, row, dx);
 		}
 
 		void raw_print() const {
@@ -170,9 +170,9 @@ public:
 			return out;
 		}
 
-		void rle_decode_line(const std::string &str, int row) {
+		void rle_decode_line(const std::string &str, int row, int dx = 0) {
 			std::string number;
-			int ib = 0;
+			int ib = dx;
 			int offset = 0;
 			std::string next = next_token(str, offset);
 			while (offset < str.length()) {

@@ -3,7 +3,8 @@
 #include <sstream>
 #include <atomic>
 #include <chrono>
-#include <stddef.h>
+#include <cstddef>
+#include <cstdio>
 #include "canvas.hxx"
 
 using namespace std;
@@ -23,6 +24,10 @@ void print_all();
 void print_all2();
 
 void print_all3();
+
+void print_all4();
+
+void print_all5();
 
 #define rgb(r, g, b) "\033[38;2;" #r ";" #g ";" #b "m"
 // List of rgb ansi colors
@@ -52,8 +57,8 @@ MPI_Comm comm2d;
 int dims[2] = {0, 0};
 int periods[2] = {1, 1};
 int relative[9] = {-1, -1, -1, -1, -1, -1, -1, -1, -1};
-const int width = 3;
-const int height = 3;
+const int width = 40;
+const int height = 40;
 #define ANALYSIS_RANK 0
 Canvas<width + 2, height + 2> canvas{};
 
@@ -76,8 +81,8 @@ struct Coords {
         stringstream ss;
         ss << "Coords{" << x << "," << y << "} not found in global_to_local for rank " << world_rank;
 //        if (ANALYSIS_RANK == world_rank)
-        cout << ss.str() << endl;
-//        throw std::runtime_error(ss.str());
+//        cout << ss.str() << endl;
+        throw std::runtime_error(ss.str());
         return Coords{0, 0};
     }
 
@@ -183,18 +188,8 @@ void comunicate() {
     for (int i = 0; i < recv_requests.size(); i++) reqs[i] = *recv_requests[i];
     MPI_Waitall((int) recv_requests.size(), reqs, MPI_STATUSES_IGNORE);
     for (int i = 0; i < recv_requests.size(); i++) {
-//        if (recv_data[i]->pos.x == -1 and recv_data[i]->pos.y == -1) {
-//            continue;
-//        }
         Coords local = recv_data[i]->pos.global_to_local();
         canvas.at(local.x, local.y) = recv_data[i]->value;
-        if (canvas.at(local.x, local.y))
-            cout << "Rank: " << world_rank << " Recv: " << recv_data[i]->pos << "=>" << local << " "
-                 << canvas.at(local.x, local.y) << endl;
-//        if (ANALYSIS_RANK == world_rank) {
-            cout << "Recv[" << world_rank << "] " << recv_data[i]->pos << "=>" << local << " " << recv_data[i]->value << canvas.at(local.x, local.y)
-                 << endl;
-//        }
     }
     MPI_Request reqs2[send_requests.size()];
     for (int i = 0; i < send_requests.size(); i++) reqs2[i] = *send_requests[i];
@@ -215,9 +210,6 @@ void recv_request(vector<MPI_Request *> &recv_requests, vector<CoordsValue *> &r
 
 void send_request(vector<MPI_Request *> &send_requests, int dest, CoordsValue cv) {
     auto *req = new MPI_Request;
-    if (dest == ANALYSIS_RANK) {
-        cout << "Send[" << ANALYSIS_RANK << "] (" << world_rank << ") " << cv.pos << " " << cv.value << endl;
-    }
     int ierr = MPI_Isend(&cv, 1, MPI_CoordsValue, dest, 0, MPI_COMM_WORLD, req);
     validateMPIoutput(ierr);
     send_requests.push_back(req);
@@ -243,16 +235,22 @@ int main() {
 //    _simple_test();
     canvas.init();
     if (world_rank == 4) {
-        canvas.at(width, height) = true;
+//        canvas.at(width, height) = true;
+        canvas.load_file("data/diag-glider.rle", 1, 1);
+//        canvas.load_file("data/mini.rle", 1, 1);
     }
-    comunicate();
-    MPI_Barrier(MPI_COMM_WORLD);
-    usleep(5000);
-    cout << "\n\n\n" << endl;
-    usleep(5000);
-    MPI_Barrier(MPI_COMM_WORLD);
-    print_all3();
-    debug_neighbors();
+    if (world_rank == 2) {
+//        canvas.at(width, height) = true;
+        canvas.load_file("data/glider.rle", 1, 1);
+    }
+    for(int i=0; i<1000; i++) {
+        comunicate();
+        MPI_Barrier(MPI_COMM_WORLD);
+        print_all5();
+        canvas.iter();
+        MPI_Barrier(MPI_COMM_WORLD);
+        usleep(50000);
+    }
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Finalize();
     return 0;
@@ -294,10 +292,6 @@ void print_all() {
 }
 
 void print_all2() {
-    const int dx = 3;
-    const int dy = 4;
-    Canvas<width * dx, height * dy> canvas2{};
-    canvas2.init();
     for (int i = 0; i < width; i++) {
         for (int o = 0; o < height; o++) {
             Coords c{i + 1, o + 1};
@@ -309,14 +303,10 @@ void print_all2() {
         }
     }
     MPI_Barrier(MPI_COMM_WORLD);
-    cout << "\033[0m\033[" << height * dy + 1 << ";1H" << flush;
+    cout << "\033[0m\033[" << height * dims[1] + 1 << ";1H" << flush;
 }
 
 void print_all3() {
-    const int dx = 3;
-    const int dy = 4;
-    Canvas<width * dx, height * dy> canvas2{};
-    canvas2.init();
     for (int i = 0; i < width + 2; i++) {
         for (int o = 0; o < height + 2; o++) {
             Coords c{i, o};
@@ -338,7 +328,88 @@ void print_all3() {
     MPI_Barrier(MPI_COMM_WORLD);
     usleep(500);
     MPI_Barrier(MPI_COMM_WORLD);
-    cout << "\033[0m\033[" << (height + 2) * (dy * 2) + 25 << ";1H" << flush;
+    cout << "\033[0m\033[" << (height + 2) * (dims[1] * 2) + 25 << ";1H" << flush;
+}
+
+void print_all4() {
+    for (int i = 0; i < width + 2; i++) {
+        for (int o = 0; o < height + 2; o++) {
+            Coords c{i, o};
+            Coords g = c.to_super_global();
+            Coords g2 = c.to_global();
+            bool send = canvas.at(c.x, c.y);
+            const char *bg = i > 0 && i < width + 1 && o > 0 && o < height + 1 ? "\033[48;2;20;40;20m" : "\033[40m";
+
+            const char *underline = send ? "\033[4m" : "";
+            cout << bg << underline << "\033[" << (g.y) + 1 << ";" << (g.x * 2) + 1 << "H" << ansi_colors[world_rank]
+                 << (send ? 'X' : '.') << "\033[0m" << flush;
+            MPI_Barrier(MPI_COMM_WORLD);
+            usleep(500 * world_rank);
+        }
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+    usleep(500);
+    MPI_Barrier(MPI_COMM_WORLD);
+    cout << "\033[0m\033[" << (height + 2) * (dims[1] * 2) + 25 << ";1H" << flush;
+}
+
+void MPI_Gather_string(const std::string &send, std::string &recv, int root, MPI_Comm comm) {
+    int rank, size;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+
+    // Get the length of the string to be sent
+    int send_len = send.length();
+
+    // Gather the lengths of the strings from all processes
+    std::vector<int> recv_lens(size);
+    MPI_Gather(&send_len, 1, MPI_INT, recv_lens.data(), 1, MPI_INT, root, comm);
+
+    // Calculate displacements and total length of the concatenated string
+    std::vector<int> displs(size);
+    int total_len = 0;
+    if (rank == root) {
+        for (int i = 0; i < size; ++i) {
+            displs[i] = total_len;
+            total_len += recv_lens[i];
+        }
+    }
+
+    // Gather the actual strings
+    std::vector<char> send_buf(send.begin(), send.end());
+    std::vector<char> recv_buf;
+    if (rank == root) {
+        recv_buf.resize(total_len);
+    }
+
+    MPI_Gatherv(send_buf.data(), send_len, MPI_CHAR, recv_buf.data(), recv_lens.data(), displs.data(), MPI_CHAR, root,
+                comm);
+
+    // Convert the gathered characters back into a string at the root process
+    if (rank == root) {
+        recv = std::string(recv_buf.begin(), recv_buf.end());
+    }
+}
+
+void print_all5() {
+    stringstream ss;
+    for (int i = 0; i < width; i++) {
+        for (int o = 0; o < height; o++) {
+            Coords c{i + 1, o + 1};
+            Coords g = c.to_global();
+            bool send = canvas.at(c.x, c.y);
+            ss << "\033[" << (g.y) + 1 << ";" << (g.x * 2) + 1 << "H" << ansi_colors[world_rank]
+               << (send ? "██" : "░░") << "\033[0m";
+        }
+    }
+    string str = ss.str();
+    string out;
+    MPI_Gather_string(str, out, 0, MPI_COMM_WORLD);
+    // Print full_message on root
+    if (world_rank == 0) {
+        cout << out << flush;
+        cout << "\033[0m\033[" << (height) * (dims[1]) << ";1H" << flush;
+    }
 }
 
 void debug_ranks() {
