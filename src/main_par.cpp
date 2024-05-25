@@ -29,14 +29,14 @@ void print_all3();
 const char *ansi_colors[] = {
         rgb(255, 0, 0),
         rgb(0, 255, 0),
-        rgb(0, 0, 255),
+        rgb(100, 100, 255),
         rgb(255, 255, 0),
         rgb(0, 255, 255),
         rgb(255, 0, 255),
         rgb(255, 255, 255),
-        rgb(128, 128, 128),
+        rgb(128, 255, 128),
         rgb(0, 128, 255),
-        rgb(192, 192, 192),
+        rgb(255, 128, 128),
         rgb(128, 0, 0),
         rgb(128, 128, 0),
         rgb(0, 128, 0),
@@ -54,24 +54,37 @@ int periods[2] = {1, 1};
 int relative[9] = {-1, -1, -1, -1, -1, -1, -1, -1, -1};
 const int width = 3;
 const int height = 3;
-#define ANALYSIS_RANK 4
+#define ANALYSIS_RANK 0
 Canvas<width + 2, height + 2> canvas{};
 
 struct Coords {
     int x;
     int y;
 
+    /*[[nodiscard]] Coords global_to_local() const {
+        return Coords{positive_modulo(x - cart_coords[0] * width - 1, width + 2), positive_modulo(y - cart_coords[1] * height - 1, height + 2)};
+    }*/
     [[nodiscard]] Coords global_to_local() const {
-//        int tag = (int) to_global_tag();
-//        return Coords{tag % ((width + 2) * dims[0]) + 1, tag / ((width + 2) * dims[0]) + 1};
-//        return to_global();
-        return Coords{positive_modulo(x - cart_coords[0] * width, width + 2),
-                      positive_modulo(y - cart_coords[1] * height, height + 2)};
-//        return *this;
+        for (int i = 0; i < width + 2; i++) {
+            for (int o = 0; o < height + 2; o++) {
+                const Coords g = Coords{i, o}.to_global();
+                if (g.x == x && g.y == y) {
+                    return Coords{i, o};
+                }
+            }
+        }
+        stringstream ss;
+        ss << "Coords{" << x << "," << y << "} not found in global_to_local for rank " << world_rank;
+//        if (ANALYSIS_RANK == world_rank)
+        cout << ss.str() << endl;
+//        throw std::runtime_error(ss.str());
+        return Coords{0, 0};
     }
 
+
     [[nodiscard]] Coords to_global() const {
-        return Coords{x + cart_coords[0] * width, y + cart_coords[1] * height};
+        return Coords{positive_modulo(x + cart_coords[0] * width - 1, width * dims[0]),
+                      positive_modulo(y + cart_coords[1] * height - 1, height * dims[1])};
     }
 
     [[nodiscard]] Coords to_super_global() const {
@@ -80,7 +93,7 @@ struct Coords {
 
     [[nodiscard]] long long to_global_tag() const {
         Coords g = to_global();
-        return wrapped_coords(width * dims[0], height * dims[1], g.x - 1, g.y - 1);
+        return wrapped_coords(width * dims[0], height * dims[1], g.x, g.y);
     }
 
     [[nodiscard]] long long to_super_global_tag() const {
@@ -129,14 +142,16 @@ void init_datatypes() {
 
 void send_request(vector<MPI_Request *> &send_requests, int dest, CoordsValue cv);
 
+void dsend_request(vector<MPI_Request *> &send_requests, int dest, CoordsValue cv);
+
 void recv_request(vector<MPI_Request *> &recv_requests, vector<CoordsValue *> &recv_data);
 
 void _simple_test();
 
 void comunicate() {
-    // 0 1 2
-    // 3 4 5
-    // 6 7 8
+    // 0 1 2 <- [ Old scheme ]    0 3 6 | [ Conversion table ]
+    // 3 4 5    [ New scheme ] -> 1 4 7 | [0, 4, 8] the same
+    // 6 7 8                      2 5 8 | [1 <=> 3] [2 <=> 6] [5 <=> 7]
     vector<MPI_Request *> send_requests;
     vector<MPI_Request *> recv_requests;
     vector<CoordsValue *> recv_data;
@@ -168,14 +183,18 @@ void comunicate() {
     for (int i = 0; i < recv_requests.size(); i++) reqs[i] = *recv_requests[i];
     MPI_Waitall((int) recv_requests.size(), reqs, MPI_STATUSES_IGNORE);
     for (int i = 0; i < recv_requests.size(); i++) {
+//        if (recv_data[i]->pos.x == -1 and recv_data[i]->pos.y == -1) {
+//            continue;
+//        }
         Coords local = recv_data[i]->pos.global_to_local();
         canvas.at(local.x, local.y) = recv_data[i]->value;
-        if (recv_data[i]->value == 1)
+        if (canvas.at(local.x, local.y))
             cout << "Rank: " << world_rank << " Recv: " << recv_data[i]->pos << "=>" << local << " "
-                 << recv_data[i]->value << endl;
-        if (world_rank == 4){
-            cout << "Recv[4] " << recv_data[i]->pos << "=>" << local << " " << recv_data[i]->value << endl;
-        }
+                 << canvas.at(local.x, local.y) << endl;
+//        if (ANALYSIS_RANK == world_rank) {
+            cout << "Recv[" << world_rank << "] " << recv_data[i]->pos << "=>" << local << " " << recv_data[i]->value << canvas.at(local.x, local.y)
+                 << endl;
+//        }
     }
     MPI_Request reqs2[send_requests.size()];
     for (int i = 0; i < send_requests.size(); i++) reqs2[i] = *send_requests[i];
@@ -196,6 +215,20 @@ void recv_request(vector<MPI_Request *> &recv_requests, vector<CoordsValue *> &r
 
 void send_request(vector<MPI_Request *> &send_requests, int dest, CoordsValue cv) {
     auto *req = new MPI_Request;
+    if (dest == ANALYSIS_RANK) {
+        cout << "Send[" << ANALYSIS_RANK << "] (" << world_rank << ") " << cv.pos << " " << cv.value << endl;
+    }
+    int ierr = MPI_Isend(&cv, 1, MPI_CoordsValue, dest, 0, MPI_COMM_WORLD, req);
+    validateMPIoutput(ierr);
+    send_requests.push_back(req);
+}
+
+void dsend_request(vector<MPI_Request *> &send_requests, int dest, CoordsValue cv) {
+    auto *req = new MPI_Request;
+//    if (dest == ANALYSIS_RANK){
+//        cout << "Send[" << ANALYSIS_RANK << "] (" << world_rank << ") " << cv.pos << " " << cv.value << endl;
+//    }
+    cv.pos = Coords{-1, -1};
     int ierr = MPI_Isend(&cv, 1, MPI_CoordsValue, dest, 0, MPI_COMM_WORLD, req);
     validateMPIoutput(ierr);
     send_requests.push_back(req);
@@ -209,12 +242,15 @@ int main() {
     init_relative();
 //    _simple_test();
     canvas.init();
-    if (world_rank == ANALYSIS_RANK) {
+    if (world_rank == 4) {
         canvas.at(width, height) = true;
     }
     comunicate();
     MPI_Barrier(MPI_COMM_WORLD);
     usleep(5000);
+    cout << "\n\n\n" << endl;
+    usleep(5000);
+    MPI_Barrier(MPI_COMM_WORLD);
     print_all3();
     debug_neighbors();
     MPI_Barrier(MPI_COMM_WORLD);
@@ -287,13 +323,14 @@ void print_all3() {
             Coords g = c.to_super_global();
             Coords g2 = c.to_global();
             bool send = canvas.at(c.x, c.y);
+            const char *bg = i > 0 && i < width + 1 && o > 0 && o < height + 1 ? "\033[48;2;20;40;20m" : "\033[40m";
 
             const char *underline = send ? "\033[4m" : "";
-            cout << underline << "\033[" << (g.y) + 27 << ";" << (g.x * 10) + 1 << "H" << ansi_colors[world_rank + 1]
+            cout << bg << underline << "\033[" << (g.y) + 27 << ";" << (g.x * 10) + 1 << "H" << ansi_colors[world_rank]
                  //                 << (canvas.at(c.x, c.y) ? 'X' : '.') << hex << /*faint*/ "\033[2m" <<
                  << g2.x << "|" << g2.y << /*faint*/ "\033[2m" <<
-//                 c.x << "|" << c.y << "\033[0;3m" << world_rank << "\033[0m";
-                 c.x << "|" << c.y << "\033[0m" << world_rank << flush;
+                 //                 c.x << "|" << c.y << "\033[0;3m" << world_rank << "\033[0m";
+                 c.x << "|" << c.y << "\033[0m" << underline << bg << world_rank << "\033[0m" << flush;
             MPI_Barrier(MPI_COMM_WORLD);
             usleep(5000 * world_rank);
         }
@@ -328,30 +365,29 @@ void create_topo() {
 void init_relative() {
     // https://stackoverflow.com/questions/20813185/what-are-source-and-destination-parameters-in-mpi-cart-shift
     relative[4] = world_rank;
-    MPI_Cart_shift(comm2d, 0, 1, &relative[1], &relative[7]);
-    MPI_Cart_shift(comm2d, 1, 1, &relative[3], &relative[5]);
-    // Get diagonals
-    // 0 1 2
-    // 3 4 5
-    // 6 7 8
+    MPI_Cart_shift(comm2d, 0, 1, &relative[3], &relative[5]);
+    MPI_Cart_shift(comm2d, 1, 1, &relative[1], &relative[7]);
+    // 0 1 2 <- [ Old scheme ]    0 3 6 | [ Conversion table ]
+    // 3 4 5    [ New scheme ] -> 1 4 7 | [0, 4, 8] the same
+    // 6 7 8                      2 5 8 | [1 <=> 3] [2 <=> 6] [5 <=> 7]
     MPI_Sendrecv(
-            &relative[1], 1, MPI_INT, relative[5], 0,
-            &relative[0], 1, MPI_INT, relative[3], 0,
+            &relative[3], 1, MPI_INT, relative[7], 0,
+            &relative[0], 1, MPI_INT, relative[1], 0,
             comm2d, MPI_STATUS_IGNORE
     );
     MPI_Sendrecv(
-            &relative[1], 1, MPI_INT, relative[3], 0,
-            &relative[2], 1, MPI_INT, relative[5], 0,
+            &relative[3], 1, MPI_INT, relative[1], 0,
+            &relative[6], 1, MPI_INT, relative[7], 0,
             comm2d, MPI_STATUS_IGNORE
     );
     MPI_Sendrecv(
-            &relative[7], 1, MPI_INT, relative[5], 0,
-            &relative[6], 1, MPI_INT, relative[3], 0,
+            &relative[5], 1, MPI_INT, relative[7], 0,
+            &relative[2], 1, MPI_INT, relative[1], 0,
             comm2d, MPI_STATUS_IGNORE
     );
     MPI_Sendrecv(
-            &relative[7], 1, MPI_INT, relative[3], 0,
-            &relative[8], 1, MPI_INT, relative[5], 0,
+            &relative[5], 1, MPI_INT, relative[1], 0,
+            &relative[8], 1, MPI_INT, relative[7], 0,
             comm2d, MPI_STATUS_IGNORE
     );
 }
