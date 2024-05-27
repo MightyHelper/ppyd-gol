@@ -38,3 +38,5 @@ build/*
 
 .idea/
 cmake-build-debug-wsl/
+
+build/
