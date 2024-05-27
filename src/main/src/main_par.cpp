@@ -1,7 +1,7 @@
 #include <mpi.h>
-#include "canvas.h"
-#include "mpi_utils.h"
-#include "mpi_canvas.hxx"
+#include "../include/canvas.h"
+#include "../include/mpi_utils.h"
+#include "../include/mpi_canvas.hxx"
 
 using namespace std;
 

@@ -2,8 +2,8 @@
 // Created by federico on 5/26/24.
 //
 
-#include "vec2.h"
-#include "utils.h"
+#include "../include/vec2.h"
+#include "../include/utils.h"
 
 using namespace std;
 

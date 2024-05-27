@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "canvas.h"
-#include "vec2.h"
+#include "../../main/include/canvas.h"
+#include "../../main/include/vec2.h"
 
 TEST(Vec2Test, BasicAssertions) {
     typedef Vec2<int> Vui;

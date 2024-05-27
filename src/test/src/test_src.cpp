@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
-#include "utils.h"
-#include "canvas.h"
+#include "../../main/include/utils.h"
+#include "../../main/include/canvas.h"
 
 TEST(UtilsTest_clamp, BasicAssertions) {
     EXPECT_EQ(Utils<int>::clamp(5, 2, 7), 5);

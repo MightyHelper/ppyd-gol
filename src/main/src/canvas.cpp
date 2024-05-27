@@ -1,5 +1,5 @@
-#include "canvas.h"
-#include "utils.h"
+#include "../include/canvas.h"
+#include "../include/utils.h"
 #include <sstream>
 #include <iostream>
 #include <fstream>

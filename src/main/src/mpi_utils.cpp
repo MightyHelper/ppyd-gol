@@ -1,5 +1,5 @@
-#include "mpi_utils.h"
-#include "vec2.h"
+#include "../include/mpi_utils.h"
+#include "../include/vec2.h"
 #include <iostream>
 #include <vector>
 
