@@ -3,25 +3,25 @@
 #include "../../main/include/canvas.h"
 
 TEST(UtilsTest_clamp, BasicAssertions) {
-    EXPECT_EQ(Utils<int>::clamp(5, 2, 7), 5);
-    EXPECT_EQ(Utils<int>::clamp(5, 2, 4), 4);
-    EXPECT_EQ(Utils<int>::clamp(5, 7, 10), 7);
+    EXPECT_EQ(MathUtils<int>::clamp(5, 2, 7), 5);
+    EXPECT_EQ(MathUtils<int>::clamp(5, 2, 4), 4);
+    EXPECT_EQ(MathUtils<int>::clamp(5, 7, 10), 7);
 }
 
 TEST(UtilsTest_coords, BasicAssertions) {
-    EXPECT_EQ(Utils<int>::coords(10, 0, 0), 0);
-    EXPECT_EQ(Utils<int>::coords(10, 9, 0), 9);
-    EXPECT_EQ(Utils<int>::coords(10, 0, 1), 10);
-    EXPECT_EQ(Utils<int>::coords(10, 1, 1), 11);
+    EXPECT_EQ(MathUtils<int>::coords(10, 0, 0), 0);
+    EXPECT_EQ(MathUtils<int>::coords(10, 9, 0), 9);
+    EXPECT_EQ(MathUtils<int>::coords(10, 0, 1), 10);
+    EXPECT_EQ(MathUtils<int>::coords(10, 1, 1), 11);
 }
 
 TEST(UtilsTest_clamped_coords, BasicAssertions) {
-    EXPECT_EQ(Utils<int>::clamped_coords(10, 10, 0, 0), 0);
-    EXPECT_EQ(Utils<int>::clamped_coords(10, 10, 10, 0), 9);
-    EXPECT_EQ(Utils<int>::clamped_coords(10, 10, 0, 10), 90);
-    EXPECT_EQ(Utils<int>::clamped_coords(10, 10, 10, 10), 99);
-    EXPECT_EQ(Utils<int>::clamped_coords(10, 10, -10, 10), 90);
-    EXPECT_EQ(Utils<int>::clamped_coords(10, 10, -10, -10), 0);
+    EXPECT_EQ(MathUtils<int>::clamped_coords(10, 10, 0, 0), 0);
+    EXPECT_EQ(MathUtils<int>::clamped_coords(10, 10, 10, 0), 9);
+    EXPECT_EQ(MathUtils<int>::clamped_coords(10, 10, 0, 10), 90);
+    EXPECT_EQ(MathUtils<int>::clamped_coords(10, 10, 10, 10), 99);
+    EXPECT_EQ(MathUtils<int>::clamped_coords(10, 10, -10, 10), 90);
+    EXPECT_EQ(MathUtils<int>::clamped_coords(10, 10, -10, -10), 0);
 }
 
 TEST(CanvasTest_Cavas, BasicAssertions) {
@@ -71,7 +71,7 @@ TEST(CanvasTest_rle_decode_line, BasicAssertions) {
 
 TEST(CanvasTest_load_file, BasicAssertions) {
     Canvas canvas(10, 10), canvas2(10, 10);
-    canvas.load_file("../data/mini.rle");
+    canvas.load_file("../../../data/mini.rle");
     canvas2.init();
     std::string data = ".X...XXX.\n"
                        ".XXX..X..\n"
@@ -95,7 +95,6 @@ TEST(CanvasTest_get_total, BasicAssertions) {
             data,
             0, 0
     );
-    canvas.print();
     EXPECT_EQ(canvas.get_total(0, 0), 2);
     EXPECT_EQ(canvas.get_total(1, 0), 2);
     EXPECT_EQ(canvas.get_total(2, 0), 4);
@@ -105,7 +104,7 @@ TEST(CanvasTest_get_total, BasicAssertions) {
 
 TEST(CanvasTest_iter, BasicAssertions) {
     Canvas canvas(10, 10), canvas2(10, 10);
-    canvas.load_file("../data/mini.rle");
+    canvas.load_file("../../../data/mini.rle");
     canvas2.init();
     std::string data = ".X...XXX.\n"
                        ".XXX..X..\n"
@@ -126,8 +125,6 @@ TEST(CanvasTest_iter, BasicAssertions) {
             data2,
             0, 0
     );
-    canvas.print();
-    canvas2.print();
     for (int i = 0; i < 10 * 10; i++) {
         EXPECT_EQ(canvas.index(canvas.cells, i), canvas2.index(canvas.cells, i));
     }

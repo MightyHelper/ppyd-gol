@@ -1,8 +1,8 @@
+#include "../include/canvas.h"
 #include <atomic>
 #include <chrono>
-
-#include "../include/canvas.h"
 #include <iostream>
+
 #define CLEAR_SCREEN "\033[2J"
 #define GOTO_0_0 "\033[0;0H"
 #define S_WIDTH 100

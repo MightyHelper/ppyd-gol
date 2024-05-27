@@ -25,7 +25,7 @@ mpirun -n 9 src/main/par_gol
 
 ### GDB
 
-GDB is a powerful debugger that integrates well with CLion. You can run it by debugging a CMake run configuration in CLion.
+GDB is a powerful debugger that integrates well with **CLion**. You can run it by debugging a CMake run configuration in **CLion**.
 
 Alternatively, you can run it from the command line (from the `build` directory):
 ```bash
@@ -39,6 +39,8 @@ $ gdb src/main/gol
 ### Valgrind
 
 Valgrind is a really cool tool for detecting memory leaks and other reasons your program might crash.
+
+Valgrind is also available in **CLion** as another option alongside debugging, but you can run it from the command line as well.
 
 #### Sequential
 

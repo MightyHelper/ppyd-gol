@@ -18,16 +18,16 @@ Canvas::index(vector<bitset<BIT_GROUP_SIZE>> *mat, unsigned int index) const {
 }
 
 [[nodiscard]] bitset<BIT_GROUP_SIZE>::reference Canvas::at(unsigned int x, unsigned int y) const {
-    return index(cells, Utils<unsigned int>::clamped_coords(width, height, x, y));
+    return index(cells, MathUtils<unsigned int>::clamped_coords(width, height, x, y));
 }
 
 [[nodiscard]] int Canvas::at_or0(unsigned int x, unsigned int y) const {
     if (x >= width || y >= height) return 0;
-    return index(cells, Utils<unsigned int>::clamped_coords(width, height, x, y));
+    return index(cells, MathUtils<unsigned int>::clamped_coords(width, height, x, y));
 }
 
 [[nodiscard]] std::bitset<BIT_GROUP_SIZE>::reference Canvas::buf(unsigned int x, unsigned int y) const {
-    return index(buffer, Utils<unsigned int>::clamped_coords(width, height, x, y));
+    return index(buffer, MathUtils<unsigned int>::clamped_coords(width, height, x, y));
 }
 
 void Canvas::print() const {
@@ -117,7 +117,7 @@ void Canvas::raw_print() const {
 void Canvas::raw_print_idx() const {
     std::stringstream ss;
     for (unsigned int i = 0; i < height; i++) {
-        for (unsigned int o = 0; o < width; o++) ss << Utils<unsigned int>::clamped_coords(width, height, i, o) << " ";
+        for (unsigned int o = 0; o < width; o++) ss << MathUtils<unsigned int>::clamped_coords(width, height, i, o) << " ";
         ss << "\n";
     }
     std::cout << ss.str() << std::flush;

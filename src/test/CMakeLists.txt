@@ -15,7 +15,7 @@ add_executable(test_par_src
   src/test_par_src.cpp
   ../main/src/canvas.cpp
   ../main/src/utils.cpp
-  ../main/include/mpi_canvas.hxx
+  ../main/src/mpi_canvas.cpp
   ../main/src/vec2.cpp
   ../main/src/mpi_utils.cpp
 )
