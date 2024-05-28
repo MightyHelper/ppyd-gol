@@ -6,8 +6,6 @@
 template<typename T>
 concept arithmetic = std::integral<T> || std::floating_point<T>;
 
-// List of rgb ansi colors
-
 namespace Utils{
   const char *ansi_colors(unsigned int index);
 };

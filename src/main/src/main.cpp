@@ -7,7 +7,7 @@
 #define GOTO_0_0 "\033[0;0H"
 #define S_WIDTH 100
 #define S_HEIGHT 100
-#define PRINT false
+#define PRINT true
 
 using namespace std;
 struct Args {
