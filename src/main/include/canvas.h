@@ -4,6 +4,7 @@
 
 #include <bitset>
 #include <vector>
+#include <functional>
 
 class Canvas {
 public:
@@ -38,12 +39,6 @@ public:
 
     void iter();
 
-    static bool is_number(char c);
-
-    static std::string next_token(const std::string &str, unsigned int &offset);
-
-    void rle_decode_line(const std::string &str, int row, int dx = 0) const;
-
     [[nodiscard]] unsigned int get_total(unsigned int x, unsigned int y) const;
 
     [[nodiscard]] unsigned int step(unsigned int x, unsigned int y) const;
@@ -56,7 +51,6 @@ public:
 
     Canvas(const Canvas&) = delete;
 
-    void generate(unsigned int &ib, unsigned int row, bool value, unsigned int count) const;
 };
 
 #endif //GOL_CANVAS_H

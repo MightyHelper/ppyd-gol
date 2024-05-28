@@ -98,7 +98,7 @@ void Debug::print_all5(const MPICanvas &canvas, Vec2<unsigned int> base) {
    base,
    Vec2<unsigned int>{2, 1},
    [&canvas](stringstream &f, Vec2<unsigned int> c, Vec2<unsigned int> __attribute__((unused))g) -> void {
-     f << Utils::ansi_colors[canvas.rank] << (canvas.canvas->at(c.x, c.y) ? "██" : "░░");
+     f << Utils::ansi_colors(canvas.rank) << (canvas.canvas->at(c.x, c.y) ? "██" : "░░");
    }
   );
 }
@@ -109,7 +109,7 @@ void Debug::print_all5_full(const MPICanvas &canvas, Vec2<unsigned int> base) {
    base,
    Vec2<unsigned int>{2, 1},
    [&canvas](stringstream &f, Vec2<unsigned int> c, Vec2<unsigned int> __attribute__((unused))g) -> void {
-     f << Utils::ansi_colors[canvas.rank] << (canvas.canvas->at(c.x, c.y) ? "██" : "░░");
+     f << Utils::ansi_colors(canvas.rank) << (canvas.canvas->at(c.x, c.y) ? "██" : "░░");
    }
   );
 }
@@ -122,9 +122,9 @@ void Debug::print_all_full_all(const MPICanvas &canvas, Vec2<unsigned int> base)
    [&canvas](stringstream &f, Vec2<unsigned int> c, Vec2<unsigned int> __attribute__((unused))g) {
      Vec2<unsigned int> g2 = c.to_global(canvas.cart_coords, canvas.item_size, canvas.dims);
      const char *und = canvas.canvas->at(c.x, c.y) ? "\033[4m" : "";
-     f << und << Utils::ansi_colors[canvas.rank]
+     f << und << Utils::ansi_colors(canvas.rank)
        << c.x << "|" << c.y << /*dim*/ "\033[2m"
-       << g.x << "|" << g.y << "\033[0m" << und << Utils::ansi_colors[canvas.rank] << "\033[1m"
+       << g.x << "|" << g.y << "\033[0m" << und << Utils::ansi_colors(canvas.rank) << "\033[1m"
        << g2.x << "|" << g2.y;
    }
   );

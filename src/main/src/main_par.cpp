@@ -23,11 +23,10 @@ int main() {
     }
     for (int i = 0; i < 1000; i++) {
         canvas.comunicate();
-        MPI_Barrier(MPI_COMM_WORLD);
+		    MPI_Barrier(MPI_COMM_WORLD);
         Debug::print_all5(canvas, {40, 0});
         canvas.canvas->iter();
-        MPI_Barrier(MPI_COMM_WORLD);
-        usleep(50000);
+//        usleep(50000);
     }
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Type_free(&MPIUtils::MPI_Vec2);

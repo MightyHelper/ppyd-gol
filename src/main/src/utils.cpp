@@ -1,23 +1,18 @@
+#include <cstdio>
 #include "../include/utils.h"
 
-const char *Utils::ansi_colors[] = {
- rgb(255, 0, 0),
- rgb(0, 255, 0),
- rgb(100, 100, 255),
- rgb(255, 255, 0),
- rgb(0, 255, 255),
- rgb(255, 0, 255),
- rgb(255, 255, 255),
- rgb(128, 255, 128),
- rgb(0, 128, 255),
- rgb(255, 128, 128),
- rgb(128, 0, 0),
- rgb(128, 128, 0),
- rgb(0, 128, 0),
- rgb(128, 0, 128),
- rgb(0, 128, 128),
- rgb(0, 255, 128),
- rgb(128, 128, 255),
+
+const char *Utils::ansi_colors(unsigned int id){
+	// Generate a color based on an ID, adjacent colors should be sufficiently different
+
+	// Compute a hash of the ID
+	unsigned int r = (id * 123) % 256;
+	unsigned int g = (id * 321) % 256;
+	unsigned int b = (id * 213) % 256;
+	// "\033[38;2;" r ";" g ";" b "m"
+	char *buffer = new char[20];
+	sprintf(buffer, "\033[38;2;%d;%d;%dm", r, g, b);
+	return buffer;
 };
 
 template<typename T>

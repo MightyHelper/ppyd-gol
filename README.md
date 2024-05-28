@@ -1,6 +1,8 @@
 # ppyd-gol
 A basic implementation of the Game of Life using MPI.
 
+Cmake 3.28 is required - you need the ppa (https://apt.kitware.com/)
+
 ## Compilation
 
 To compile the project, please run the following commands:

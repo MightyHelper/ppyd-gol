@@ -1,5 +1,7 @@
 #include "../include/mpi_canvas.h"
 #include "../include/mpi_utils.h"
+#include "../include/state_loader.h"
+
 using namespace std;
 MPICanvas::MPICanvas(
         Canvas *canvas,
@@ -59,6 +61,11 @@ void MPICanvas::init_topology() {
     for (int i = 0; i < 9; i++) out2[i] = (unsigned int) out[i];
     return out2;
 }
+
+void MPICanvas::load_file(const std::string &str, int dx, int dy) {
+  // pass
+}
+
 
 void MPICanvas::comunicate() {
     // 0 1 2 <- [ Old scheme ]    0 3 6 | [ Conversion table ]

@@ -27,6 +27,9 @@ public:
 
     void comunicate();
 
+		void load_file(const std::string &str, int dx = 0, int dy = 0);
+
+
 private:
     void init_topology();
 
