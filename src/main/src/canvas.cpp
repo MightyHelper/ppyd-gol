@@ -85,7 +85,8 @@ void Canvas::load_file(const std::string &str, int dx, int dy) {
 }
 
 void Canvas::load_file(const char *path, int dx, int dy) {
-  const std::function<void(unsigned int, unsigned int, bool)> spawn = [this](unsigned int x, unsigned int y, bool value) {
+  const std::function<void(unsigned int, unsigned int, bool)> spawn = [this](unsigned int x, unsigned int y,
+                                                                             bool value) {
     at(x, y) = value;
   };
   StateLoader::load_from_file(path, dx, dy, spawn);
@@ -129,11 +130,25 @@ void Canvas::iter() {
 
 [[nodiscard]] unsigned int Canvas::get_total(unsigned int x, unsigned int y) const {
   int total = -at_or0(x, y);
-  for (int i = -1; i < 2; i++)
-    for (int o = -1; o < 2; o++)
-      total += at_or0(x + i, y + o);
+  for (int i = -1; i < 2; i++)for (int o = -1; o < 2; o++)
+    total += at_or0(x + i, y + o);
   return total;
 }
+
+//[[nodiscard]] unsigned int Canvas::get_total2(unsigned int x, unsigned int y) {
+//  auto idx = MathUtils<unsigned int>::coords(width, x-1, y-1);
+//  auto idx2 = MathUtils<unsigned int>::coords(width, x-1, y+0);
+//  auto idx3 = MathUtils<unsigned int>::coords(width, x-1, y+1);
+//  auto a = index(cells, idx+0);
+//  auto b = index(cells, idx+1);
+//  auto c = index(cells, idx+2);
+//  auto d = index(cells, idx2+0);
+//  auto e = index(cells, idx2+2);
+//  auto f = index(cells, idx3+0);
+//  auto g = index(cells, idx3+1);
+//  auto h = index(cells, idx3+2);
+//  return a+b+c+d+e+f+g+h;
+//}
 
 [[nodiscard]] unsigned int Canvas::step(unsigned int x, unsigned int y) const {
   unsigned int total = get_total(x, y);
@@ -152,7 +167,7 @@ void Canvas::step_all() const {
 }
 
 Canvas::Canvas(unsigned int width, unsigned int height)
-  : width(width), height(height) {
+ : width(width), height(height) {
   cells = new vector<bitset<BIT_GROUP_SIZE>>;
   buffer = new vector<bitset<BIT_GROUP_SIZE>>;
   cells->reserve(width * height / BIT_GROUP_SIZE + 1);

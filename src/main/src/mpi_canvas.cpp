@@ -122,3 +122,9 @@ void MPICanvas::comunicate() {
   }
   MPI_Waitall((int) send_requests.size(), send_requests.data(), MPI_STATUSES_IGNORE);
 }
+
+void MPICanvas::iter() {
+  comunicate();
+  MPI_Barrier(MPI_COMM_WORLD);
+  canvas->iter();
+}

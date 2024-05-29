@@ -1,39 +1,105 @@
 #include <mpi.h>
+#include <chrono>
 #include "../include/canvas.h"
 #include "../include/mpi_utils.h"
 #include "../include/mpi_canvas.h"
-#include "../include/mpi_canvas_debug.h"
+#include "../include/arg_parse.h"
+#include "../include/mpi_arg_parse.h"
 
 using namespace std;
+using namespace chrono;
 
-int main() {
-  MPI_Init(nullptr, nullptr);
+bool print = true;
+
+
+OutputValues time_based(MPICanvas &canvas, long millis) {
+  auto start = high_resolution_clock::now();
+  unsigned long long its = 0;
+  unsigned long long comm_time = 0;
+  unsigned long long compute_time = 0;
+  unsigned long long idle_time = 0;
+
+  while (true) {
+    auto comm_start = high_resolution_clock::now();
+    canvas.comunicate();
+    auto comm_end = high_resolution_clock::now();
+    MPI_Barrier(MPI_COMM_WORLD);
+    auto compute_start = high_resolution_clock::now();
+    canvas.canvas->iter();
+    auto end = high_resolution_clock::now();
+    auto duration = duration_cast<milliseconds>(end - start);
+    its++;
+    comm_time += duration_cast<nanoseconds>(comm_end - comm_start).count();
+    idle_time += duration_cast<nanoseconds>(compute_start - comm_end).count();
+    compute_time += duration_cast<nanoseconds>(end - compute_start).count();
+    if (duration.count() >= millis) break;
+  }
+  auto end = high_resolution_clock::now();
+  auto duration = duration_cast<nanoseconds>(end - start);
+  return OutputValues{
+   canvas.rank, its, (unsigned long long) duration.count(),
+   comm_time, idle_time, compute_time
+  };
+}
+
+
+OutputValues iter_based(MPICanvas &canvas, unsigned long long iter_count) {
+  auto start = high_resolution_clock::now();
+  unsigned long long comm_time = 0;
+  unsigned long long compute_time = 0;
+  unsigned long long idle_time = 0;
+  for (unsigned long long i = 0; i < iter_count; i++) {
+    auto comm_start = high_resolution_clock::now();
+    canvas.comunicate();
+    auto comm_end = high_resolution_clock::now();
+    MPI_Barrier(MPI_COMM_WORLD);
+    auto compute_start = high_resolution_clock::now();
+    canvas.canvas->iter();
+    auto end = high_resolution_clock::now();
+    comm_time += duration_cast<nanoseconds>(comm_end - comm_start).count();
+    idle_time += duration_cast<nanoseconds>(compute_start - comm_end).count();
+    compute_time += duration_cast<nanoseconds>(end - compute_start).count();
+  }
+  auto end = high_resolution_clock::now();
+  auto duration = duration_cast<nanoseconds>(end - start);
+
+  return OutputValues{
+   canvas.rank, iter_count, (unsigned long long) duration.count(),
+   comm_time, idle_time, compute_time
+  };
+}
+
+void program_main(int argc, char **argv) {
+  Args args = MPIArgParse::parse(argc, argv, print);
   MPIUtils::init_datatypes();
   MPICanvas canvas = MPICanvas(
-    new Canvas(82, 82),
-    Vec2<unsigned int>{80, 80},
-    Vec2<unsigned int>{1, 1}
+   new Canvas(args.width + 2, args.height + 2),
+   Vec2<unsigned int>{args.height, args.height},
+   Vec2<unsigned int>{1, 1}
   );
+  args.height = canvas.item_size.y * canvas.dims.y;
+  args.width = canvas.item_size.x * canvas.dims.x;
+  if (print) cout << args;
+
   canvas.canvas->init();
-//    if (canvas.rank == 4) {
-//        canvas.canvas->load_file("../data/diag-glider.rle", 1, 1);
-//    }
-//    if (canvas.rank == 0) {
-//        canvas.canvas->load_file("../data/glider.rle", 1, 1);
-//    }
-  canvas.load_file("../data/c4-diag-switch-engines.rle", 40, 40);
-//  Debug::print_all5(canvas, {40, 0});
-  for (int i = 0; i < 1000; i++) {
-    canvas.comunicate();
-    MPI_Barrier(MPI_COMM_WORLD);
-    Debug::print_all5(canvas, {40, 0});
-    canvas.canvas->iter();
-//    usleep(100000);
-  }
-  MPI_Barrier(MPI_COMM_WORLD);
+  canvas.load_file(args.file, 1, 1);
+  OutputValues ov = args.type ? time_based(canvas, args.millis) : iter_based(canvas, args.iter_count);
+  cout << MPIOutputValues::output(ov);
   MPI_Type_free(&MPIUtils::MPI_Vec2);
   MPI_Type_free(&MPIUtils::MPI_CoordsValue);
-  MPI_Finalize();
-  return 0;
+}
+
+int main(int argc, char **argv) {
+  try {
+    MPI_Init(&argc, &argv);
+    print = MPIUtils::get_rank() == 0;
+    program_main(argc, argv);
+    MPI_Finalize();
+    return 0;
+  } catch (const runtime_error &e) {
+    if (print) cerr << e.what() << endl;
+    MPI_Finalize();
+    return 1;
+  }
 }
 

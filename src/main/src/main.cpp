@@ -1,74 +1,65 @@
 #include "../include/canvas.h"
-#include <atomic>
+#include "../include/arg_parse.h"
 #include <chrono>
 #include <iostream>
 
-#define CLEAR_SCREEN "\033[2J"
-#define GOTO_0_0 "\033[0;0H"
-#define S_WIDTH 100
-#define S_HEIGHT 100
-#define PRINT true
-
 using namespace std;
-struct Args {
-    string file;
-    unsigned long long iter_count;
-    unsigned long long delay;
-};
+using namespace chrono;
 
-Args parse(int argc, const char *argv[]) {
-    switch (argc) {
-        case 0:
-        case 1:
-            throw runtime_error("No arguments provided.");
-        case 2:
-            return Args{argv[1], 0, 50000};
-        case 3:
-            return Args{argv[1], stoull(argv[2]), 50000};
-        case 4:
-            return Args{argv[1], stoull(argv[2]), stoull(argv[3])};
-        default:
-            throw runtime_error("Too many arguments provided.");
-    }
+
+OutputValues time_based(Canvas &canvas, long millis) {
+  auto start = high_resolution_clock::now();
+  unsigned long long its = 0;
+  unsigned long long compute_time = 0;
+  while (true) {
+    auto comm_start = high_resolution_clock::now();
+    canvas.iter();
+    auto end = high_resolution_clock::now();
+    auto duration = duration_cast<milliseconds>(end - start);
+    its++;
+    compute_time += duration_cast<nanoseconds>(end - comm_start).count();
+    if (duration.count() >= millis) break;
+  }
+  auto end = high_resolution_clock::now();
+  auto duration = duration_cast<nanoseconds>(end - start);
+  return OutputValues{
+   0, its, (unsigned long long) duration.count(),
+   0, 0, compute_time
+  };
 }
 
-void program_main(int argc, const char **argv) {
-    Args args = parse(argc, argv);
-    Canvas canvas{S_WIDTH, S_HEIGHT};
-    canvas.load_file(args.file, 0, 0);
-#if PRINT
-    cout << CLEAR_SCREEN << flush;
-#endif
-    double its = 0;
-    // use chrono to get the current time
-    auto start = chrono::high_resolution_clock::now();
-    for (unsigned int i = 0; i < args.iter_count; i++) {
-#if PRINT
-        cout << GOTO_0_0;
-        canvas.print();
-#endif
-        canvas.iter();
-        usleep(args.delay);
-        if (i % 10 == 0) {
-            auto end = chrono::high_resolution_clock::now();
-            auto duration = chrono::duration_cast<chrono::nanoseconds>(end - start);
-            start = chrono::high_resolution_clock::now();
-            its = 1000000000.0 / (double) duration.count();
-        }
-    }
-    cout << "Iterations per second: " << its << endl;
-#if PRINT
-        cout << GOTO_0_0;
-        canvas.print();
-#endif
+OutputValues iter_based(Canvas &canvas, unsigned long long iter_count) {
+  auto start = high_resolution_clock::now();
+  unsigned long long compute_time = 0;
+  for (unsigned long long i = 0; i < iter_count; i++) {
+    auto compute_start = high_resolution_clock::now();
+    canvas.iter();
+    auto end = high_resolution_clock::now();
+    compute_time += duration_cast<nanoseconds>(end - compute_start).count();
+  }
+  auto end = high_resolution_clock::now();
+  auto duration = duration_cast<nanoseconds>(end - start);
+  return OutputValues{
+   0, iter_count, (unsigned long long) duration.count(),
+   0, 0, compute_time
+  };
 }
 
-int main(int argc, const char *argv[]) {
-    try {
-        program_main(argc, argv);
-        return 0;
-    } catch (const exception &e) {
-        cerr << e.what() << endl;
-        return 1;
-    }
+void program_main(int argc, char **argv) {
+  Args args = Args::parse(argc, argv, true);
+  cout << args;
+  Canvas canvas{args.width, args.height};
+  canvas.load_file(args.file, 0, 0);
+  OutputValues ov = args.type ? time_based(canvas, args.millis) : iter_based(canvas, args.iter_count);
+  cout << "output: \n" << ov;
+}
+
+int main(int argc, char *argv[]) {
+  try {
+    program_main(argc, argv);
+    return 0;
+  } catch (const exception &e) {
+    cerr << e.what() << endl;
+    return 1;
+  }
 }
