@@ -121,6 +121,12 @@ void MPICanvas::comunicate() {
     canvas->at(local.x, local.y) = recv_data[i]->value;
   }
   MPI_Waitall((int) send_requests.size(), send_requests.data(), MPI_STATUSES_IGNORE);
+  for (int i = 0; i < send_data.size(); i++) {
+    delete send_data[i];
+  }
+  for (int i = 0; i < recv_data.size(); i++) {
+    delete recv_data[i];
+  }
 }
 
 void MPICanvas::iter() {
