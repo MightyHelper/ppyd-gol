@@ -5,6 +5,7 @@
 #include "../include/mpi_canvas.h"
 #include "../include/arg_parse.h"
 #include "../include/mpi_arg_parse.h"
+#include "../include/mpi_canvas_debug.h"
 
 using namespace std;
 using namespace chrono;
@@ -32,7 +33,9 @@ OutputValues time_based(MPICanvas &canvas, long millis) {
     comm_time += duration_cast<nanoseconds>(comm_end - comm_start).count();
     idle_time += duration_cast<nanoseconds>(compute_start - comm_end).count();
     compute_time += duration_cast<nanoseconds>(end - compute_start).count();
-    if (duration.count() >= millis) break;
+    bool will_break = duration.count() >= millis;
+    MPI_Bcast(&will_break, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+    if (will_break) break;
   }
   auto end = high_resolution_clock::now();
   auto duration = duration_cast<nanoseconds>(end - start);
@@ -79,10 +82,13 @@ void program_main(int argc, char **argv) {
   );
   args.height = canvas.item_size.y * canvas.dims.y;
   args.width = canvas.item_size.x * canvas.dims.x;
-  if (print) cout << args;
-
   canvas.canvas->init();
+  if (print) cout << "state: Compiling..." << endl;
+  Vec2<unsigned int>::pre_build(canvas.cart_coords, canvas.item_size, canvas.dims);
+  if (print) cout << "state: Loading..." << endl;
   canvas.load_file(args.file, 1, 1);
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (print) cout << args << flush;
   OutputValues ov = args.type ? time_based(canvas, args.millis) : iter_based(canvas, args.iter_count);
   cout << MPIOutputValues::output(ov);
   MPI_Type_free(&MPIUtils::MPI_Vec2);
