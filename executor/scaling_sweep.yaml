@@ -1,0 +1,25 @@
+#  "rle": ["mini.rle"],
+#  "host": ["DGPC"],
+#  "n": [-1, 1, 4, 9, 16],
+#  "iw": [10, 100, 500, 1000],
+#  "ih": [10, 100, 500, 1000],
+#  "exec_index": list(range(5)),
+#  "time": [3],
+program: wandb_agent.py
+name: scaling
+method: grid
+parameters:
+  rle:
+    values: ["mini.rle"]
+  host:
+    values: ["DGPC"]
+  n:
+    values: [-1, 1, 4, 9, 16]
+  iw:
+    values: [10, 100, 500, 1000]
+  ih:
+    values: [10, 100, 500, 1000]
+  exec_index:
+    values: [0, 1, 2, 3, 4]
+  time:
+    values: [180]

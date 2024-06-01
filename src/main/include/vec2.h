@@ -22,16 +22,10 @@ public:
   T y;
   [[nodiscard]] Vec2 global_to_local(Vec2 cart_coords, Vec2 size, Vec2 dims) const;
   [[nodiscard]] Vec2 global_to_local_memoized(Vec2 cart_coords, Vec2 size, Vec2 dims) const;
-  [[nodiscard]] Vec2 global_to_local_memoized2(Vec2 cart_coords, Vec2 size, Vec2 dims) const;
-
   [[nodiscard]] Vec2 to_global(Vec2 cart_coords, Vec2 size, Vec2 dims) const;
-
   [[nodiscard]] Vec2 to_super_global(Vec2 cart_coords, Vec2 size) const;
-
   [[nodiscard]] T to_global_tag(Vec2 cart_coords, Vec2 size, Vec2 dims) const;
-
   [[nodiscard]] T global_to_tag(Vec2 cart_coords, Vec2 size, Vec2 dims) const;
-
   [[nodiscard]] T to_super_global_tag(Vec2 cart_coords, Vec2 size, Vec2 dims) const;
 
   bool operator==(const Vec2 &rhs) const;
@@ -53,6 +47,7 @@ public:
   template<typename V>
   requires std::integral<V>
   friend std::ostream &operator<<(std::ostream &os, const Vec2<V> &c);
+
   static void pre_build(Vec2<T> cart_coords, Vec2<T> size, Vec2<T> dims) {
     for (T i = 0; i < size.x + 2; i++) {
       for (T o = 0; o < size.y + 2; o++) {
@@ -68,7 +63,6 @@ public:
     }
   }
 };
-
 
 
 struct CoordsValue {

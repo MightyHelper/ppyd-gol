@@ -96,10 +96,14 @@ void MPICanvas::comunicate() {
     send_data[1].push_back(CoordsValue{g3, canvas->at(c3.x, c3.y)});
     send_data[7].push_back(CoordsValue{g4, canvas->at(c4.x, c4.y)});
   }
-  send_data[0].push_back(CoordsValue{Vec2{(unsigned int)1,(unsigned int) 1}.to_global(cart_coords, item_size, dims), canvas->at(1, 1)});
-  send_data[2].push_back(CoordsValue{Vec2{item_size.x, (unsigned int)1}.to_global(cart_coords, item_size, dims), canvas->at(item_size.x, 1)});
-  send_data[6].push_back(CoordsValue{Vec2{(unsigned int)1, item_size.y}.to_global(cart_coords, item_size, dims), canvas->at(1, item_size.y)});
-  send_data[8].push_back(CoordsValue{Vec2{item_size.x, item_size.y}.to_global(cart_coords, item_size, dims), canvas->at(item_size.x, item_size.y)});
+  send_data[0].push_back(
+   CoordsValue{Vec2{(unsigned int) 1, (unsigned int) 1}.to_global(cart_coords, item_size, dims), canvas->at(1, 1)});
+  send_data[2].push_back(CoordsValue{Vec2{item_size.x, (unsigned int) 1}.to_global(cart_coords, item_size, dims),
+                                     canvas->at(item_size.x, 1)});
+  send_data[6].push_back(CoordsValue{Vec2{(unsigned int) 1, item_size.y}.to_global(cart_coords, item_size, dims),
+                                     canvas->at(1, item_size.y)});
+  send_data[8].push_back(CoordsValue{Vec2{item_size.x, item_size.y}.to_global(cart_coords, item_size, dims),
+                                     canvas->at(item_size.x, item_size.y)});
 
   // Send packed
   vector<MPI_Request> send_requests;
@@ -113,7 +117,7 @@ void MPICanvas::comunicate() {
   // Recv packed
   vector<MPI_Request> recv_requests;
   for (unsigned int i = 0; i < 9; i++) {
-    if (relative[i] == relative[4]){
+    if (relative[i] == relative[4]) {
       continue;
     }
     recv_data[i].resize(send_data[i].size());

@@ -97,7 +97,7 @@ void Debug::print_all5(const MPICanvas &canvas, Vec2<unsigned int> base) {
    canvas,
    base,
    Vec2<unsigned int>{2, 1},
-   [&canvas](stringstream &f, Vec2<unsigned int> c, Vec2<unsigned int> __attribute__((unused))g) -> void {
+   [&canvas](stringstream &f, Vec2<unsigned int> c, Vec2<unsigned int> __attribute__((unused)) g) -> void {
      f << Utils::ansi_colors(canvas.rank) << (canvas.canvas->at(c.x, c.y) ? "██" : "░░");
    }
   );
@@ -108,7 +108,7 @@ void Debug::print_all5_full(const MPICanvas &canvas, Vec2<unsigned int> base) {
    canvas,
    base,
    Vec2<unsigned int>{2, 1},
-   [&canvas](stringstream &f, Vec2<unsigned int> c, Vec2<unsigned int> __attribute__((unused))g) -> void {
+   [&canvas](stringstream &f, Vec2<unsigned int> c, Vec2<unsigned int> __attribute__((unused)) g) -> void {
      f << Utils::ansi_colors(canvas.rank) << (canvas.canvas->at(c.x, c.y) ? "██" : "░░");
    }
   );
@@ -119,7 +119,7 @@ void Debug::print_all_full_all(const MPICanvas &canvas, Vec2<unsigned int> base)
    canvas,
    base,
    Vec2<unsigned int>{12, 2},
-   [&canvas](stringstream &f, Vec2<unsigned int> c, Vec2<unsigned int> __attribute__((unused))g) {
+   [&canvas](stringstream &f, Vec2<unsigned int> c, Vec2<unsigned int> __attribute__((unused)) g) {
      Vec2<unsigned int> g2 = c.to_global(canvas.cart_coords, canvas.item_size, canvas.dims);
      const char *und = canvas.canvas->at(c.x, c.y) ? "\033[4m" : "";
      f << und << Utils::ansi_colors(canvas.rank)
@@ -168,7 +168,7 @@ void Debug::debug_mpi_datatypes(const MPICanvas &canvas) {
   if (canvas.rank == root) {
     for (unsigned int i = 0; i < canvas.size; i++) {
       MPIUtils::send_request(requests, sends, i,
-                              new CoordsValue{Vec2<unsigned int>{root + 69, root + 42}, true});
+                             new CoordsValue{Vec2<unsigned int>{root + 69, root + 42}, true});
     }
   }
   vector<MPI_Request> responses{};

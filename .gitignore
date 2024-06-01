@@ -42,3 +42,4 @@ cmake-build-debug-wsl/
 cmake-build-debug-coverage/
 
 build/
+executor/wandb

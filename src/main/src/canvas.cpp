@@ -130,8 +130,9 @@ void Canvas::iter() {
 
 [[nodiscard]] unsigned int Canvas::get_total(unsigned int x, unsigned int y) const {
   int total = -at_or0(x, y);
-  for (int i = -1; i < 2; i++)for (int o = -1; o < 2; o++)
-    total += at_or0(x + i, y + o);
+  for (int i = -1; i < 2; i++)
+    for (int o = -1; o < 2; o++)
+      total += at_or0(x + i, y + o);
   return total;
 }
 
