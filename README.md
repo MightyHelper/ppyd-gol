@@ -58,3 +58,15 @@ When running with MPI, Valgrind may produce some MPI-related warnings that can b
 mpirun -n 9 valgrind src/main/par_gol
 ```
 
+
+## Experiment execution
+
+1. Create a WANDB account wandb.ai
+2. Install WANDB locally using pip
+3. Run `wandb login` and paste in your token
+4. Create a sweep.yaml
+5. Run `wandb sweep -p <project> -e <entity>` to create the sweep
+6. Create a `available_processes.txt` inside `executor` with the number of cores available on the machine
+7. Run `nohup <sweep agent cmd> &` as many times as required from `executor`
+
+
