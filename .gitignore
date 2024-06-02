@@ -43,3 +43,5 @@ cmake-build-debug-coverage/
 
 build/
 executor/wandb
+executor/available_processes.txt
+**/__pycache__
