@@ -1,0 +1,30 @@
+#  "rle": ["mini.rle"],
+#  "host": ["DGPC"],
+#  "n": [-1, 1, 4, 9, 16],
+#  "iw": [10, 100, 500, 1000],
+#  "ih": [10, 100, 500, 1000],
+#  "exec_index": list(range(5)),
+#  "time": [3],
+program: wandb_agent.py
+name: file
+method: grid
+parameters:
+  rle:
+    values: ["mini.rle", "c2-orthogonal.rle", "c4-diag-switch-engines.rle", "diag-glider.rle", "glider.rle"]
+  host:
+    values: ["DGPC"]
+  n:
+    values: [-1, 1, 4]
+  iw:
+    values: [100]
+  ih:
+    values: [100]
+  exec_index:
+    values: [0, 1, 2, 3, 4]
+  time:
+    values: [180]
+command:
+- ${env}
+- /home/federico/anaconda3/envs/main2/bin/python3
+- ${program}
+- ${args}
