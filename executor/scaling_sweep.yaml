@@ -23,3 +23,8 @@ parameters:
     values: [0, 1, 2, 3, 4]
   time:
     values: [180]
+command:
+- ${env}
+- /home/federico/anaconda3/envs/main2/bin/python3
+- ${program}
+- ${args}

@@ -25,7 +25,7 @@ def run(n: int, fil: str, time_ms: int, width: int, height: int) -> str:
             [sequential, in_data / fil, "t", str(time_ms), str(width), str(height)],
             stdout=subprocess.PIPE,
             text=True,
-            timeout=5 + 1.4 * time_ms / 1000
+            timeout=60 + 1.4 * time_ms / 1000
         )
     else:
         process = subprocess.run(
@@ -33,7 +33,7 @@ def run(n: int, fil: str, time_ms: int, width: int, height: int) -> str:
              str(height)],
             stdout=subprocess.PIPE,
             text=True,
-            timeout=12 + 1.4 * time_ms / 1000
+            timeout=120 + 1.4 * time_ms / 1000
         )
     return process.stdout
 
@@ -67,11 +67,11 @@ def run_item(config: dict) -> None:
             file.write_text(f"---\nindex: {exec_index}\n{run_result}")
             with file.open("r") as f:
                 yaml_file = yaml.safe_load(f)
-            my_run = wandb.init(
-                project="gol",
-                reinit=True,
-                config=yaml_file["run_config"]
-            )
+            # my_run = wandb.init(
+                #project="gol",
+                #reinit=True,
+                #config=yaml_file["run_config"]
+            #)
             to_dict: dict = flatten_dict({'process': yaml_file["output"]}, sep='.')
-            my_run.log(to_dict)
-            my_run.finish()
+            wandb.log(to_dict)
+            # my_run.finish()
