@@ -35,11 +35,11 @@ def ss_1():
     ax.set_xlim(plot_limits[0])
     ax.set_ylim(plot_limits[1])
     ax.set_xlabel('Number of Processes (n)')
-    ax.set_ylabel('Speedup (Its/ms_sequential / Its/ms_parallel)')
+    ax.set_ylabel('Efficiency')
     ax.legend(title='Cells per process', loc='upper left', bbox_to_anchor=(1, 1))
     ax.grid(True)
     plt.tight_layout()
-    plt.savefig("data/strong_scale_1.png")
+    plt.savefig("data/weak_scale_1.png")
 
 def ss_2():
     sequential_reset = scaling_sequential_results.reset_index().set_index(['config.is'])
@@ -62,11 +62,11 @@ def ss_2():
     ax.set_xlim(plot_limits[0])
     ax.set_ylim(plot_limits[1])
     ax.set_xlabel('Number of Processes (n)')
-    ax.set_ylabel('Speedup (Its/system_size/ms_sequential / Its/system_size/ms_parallel)')
+    ax.set_ylabel('Speedup')
     ax.legend(title='Cells per process', loc='upper left', bbox_to_anchor=(1, 1))
     ax.grid(True)
     plt.tight_layout()
-    plt.savefig("data/strong_scale_2.png")
+    plt.savefig("data/weak_scale_2.png")
 
 ss_1()
 ss_2()

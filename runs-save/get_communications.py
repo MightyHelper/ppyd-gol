@@ -62,7 +62,7 @@ ax.set_xlabel('Process Count (n)')
 ax.set_ylabel('Percent')
 
 # Add legend
-ax.legend(['Communication', 'Idle', 'Compute', 'Unknown'], title='Cells per process', loc='upper left',
+ax.legend(['Communication', 'Idle', 'Compute', 'Unknown'], title='Reference', loc='upper left',
           bbox_to_anchor=(1, 1))
 # tight layout
 plt.tight_layout()
