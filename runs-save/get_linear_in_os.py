@@ -10,11 +10,11 @@ df['config.ow'] = df['config.iw'] * np.abs(df['config.n'])
 df['config.oh'] = df['config.ih'] * np.abs(df['config.n'])
 df['config.is'] = df['config.iw'] * df['config.ih']
 df['config.os'] = df['config.ow'] * df['config.oh']
-scaling_sweep = df['sweep_id'] == 'scaling'
+scaling_sweep = (df['sweep_id'] == 'scaling') | (df['sweep_id'] == 'scaling2')
 parallel = df['config.n'] > 0
 scaling_df = df[scaling_sweep]
 scaling_parallel_df = scaling_df
-scaling_parallel_results = scaling_parallel_df.drop(columns=['config.rle', 'name', 'sweep_id', 'config.host', 'summary._wandb']).groupby(['config.os', 'config.n']).mean()
+scaling_parallel_results = scaling_parallel_df.drop(columns=['config.rle', 'name', 'config.host', 'summary._wandb']).groupby(['config.os', 'config.n', 'sweep_id']).mean()
 scaling_parallel_results['ms/its'] = scaling_parallel_results['summary.process.0.results.time.total'] / scaling_parallel_results['summary.process.0.results.iterations']
 
 par = scaling_parallel_results.reset_index()
@@ -39,34 +39,47 @@ plt.savefig("data/linear_in_os.png")
 def time_per_it(o_size, n):
     items = (par['config.os'] == o_size) & (par['config.n'] == n)
     assert items.sum() > 0, f"No data for outer size {o_size} and {n} nodes"
-    return par[items]['ms/its'].values[0]
+    result = par[items]['ms/its'].values[0]
+    print(f"Time per iteration for outer size {o_size} and {n} nodes: {result}")
+    return result
 
 def speedup(o_size, n):
-    return time_per_it(o_size, -1) / time_per_it(o_size, n)
+    s = time_per_it(o_size, -1) / time_per_it(o_size, n)
+    print(f"Speedup for outer size {o_size} and {n} nodes: {s}")
+    return s
 
 def efficiency(o_size, n):
-    return speedup(o_size, n) / n
+    e = speedup(o_size, n) / n
+    print(f"Efficiency for outer size {o_size} and {n} nodes: {e}")
+    return e
 
 def plot_speedup():
     fig, ax = plt.subplots()
     for i, x in enumerate(n_values):
-        ax.plot(par['config.os'], [speedup(o_size, x) for o_size in par['config.os']], color=palette[i], label=f'{x}' if x > 0 else 'Sequential')
+        if x < 0:
+            continue
+        os_values = list(sorted(set(par[par['config.n'] == x]['config.os']).intersection(set(par[par['config.n'] == -1]['config.os']))))
+        print(x, os_values)
+        ax.plot(os_values, [speedup(o_size, x) for o_size in os_values], color=palette[i], label=f'{x}' if x > 0 else 'Sequential')
     ax.legend(title='Nodes')
     ax.set_xlabel('Outer Size')
     ax.set_ylabel('Speedup')
-    ax.set_xscale('log')
     plt.savefig("data/speedup_in_os.png")
 
 def plot_efficiency():
     fig, ax = plt.subplots()
     for i, x in enumerate(n_values):
-        ax.plot(par['config.os'], [efficiency(o_size, x) for o_size in par['config.os']], color=palette[i], label=f'{x}' if x > 0 else 'Sequential')
+        if x < 0:
+            continue
+        os_values = list(sorted(set(par[par['config.n'] == x]['config.os']).intersection(set(par[par['config.n'] == -1]['config.os']))))
+        print(x, os_values)
+        ax.plot(os_values, [efficiency(o_size, x) for o_size in os_values], color=palette[i], label=f'{x}' if x > 0 else 'Sequential')
     ax.legend(title='Nodes')
     ax.set_xlabel('Outer Size')
     ax.set_ylabel('Efficiency')
-    ax.set_xscale('log')
     plt.savefig("data/efficiency_in_os.png")
 
 plot_speedup()
 plot_efficiency()
+
 
