@@ -41,12 +41,16 @@ def run_item(config: dict) -> None:
     rle: str = config['rle']
     host: str = config['host']
     n: int = config['n']
-    iw: int = config['iw']
-    ih: int = config['ih']
+    os_index: int = config['os_index']
+    os: int = 144 * os_index ** 2
+    ow: int = int(os ** 0.5)
+    oh: int = int(os ** 0.5)
+    # iw: int = ow / sqrt(n)
+    # ih: int = oh / sqrt(n)
     exec_index: int = config['exec_index']
     total_time: int = config['time']
 
-    file: Path = out_run / f"{rle}_{host}_{n}_{iw}_{ih}_{exec_index}.yaml"
+    file: Path = out_run / f"{rle}_{host}_{n}_{ow}_{oh}_{exec_index}.yaml"
     if file.exists():
         return
 
@@ -57,7 +61,7 @@ def run_item(config: dict) -> None:
         run_result: Optional[str] = None
         start: float = time.time()
         try:
-            run_result = run(n, rle, total_time * 1000, iw, ih)
+            run_result = run(n, rle, total_time * 1000, ow, oh)
         except tenacity.RetryError:
             file.unlink(missing_ok=True)
             end = time.time()
@@ -72,6 +76,6 @@ def run_item(config: dict) -> None:
                 #reinit=True,
                 #config=yaml_file["run_config"]
             #)
-            to_dict: dict = flatten_dict({'process': yaml_file["output"]}, sep='.')
+            to_dict: dict = flatten_dict({'process': yaml_file["output"], 'run_config': yaml_file['run_config']}, sep='.')
             wandb.log(to_dict)
             # my_run.finish()

@@ -76,8 +76,8 @@ void program_main(int argc, char **argv) {
   Args args = MPIArgParse::parse(argc, argv, print);
   MPIUtils::init_datatypes();
   MPICanvas canvas = MPICanvas(
-   new Canvas(args.width + 2, args.height + 2),
-   Vec2<unsigned int>{args.height, args.height},
+   new Canvas(args.inner_width + 2, args.inner_height + 2),
+   Vec2<unsigned int>{args.inner_width, args.inner_height},
    Vec2<unsigned int>{1, 1}
   );
   args.height = canvas.item_size.y * canvas.dims.y;

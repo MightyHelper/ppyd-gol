@@ -4,13 +4,18 @@
 
 #include "../include/mpi_arg_parse.h"
 #include "../include/mpi_utils.h"
+#include <cmath>
 
 #include <sstream>
 
 Args MPIArgParse::parse(int argc, char **argv, bool print){
   Args args = Args::parse(argc, argv, print);
-  args.program_type = "parallel";
+  args.width = args.inner_width;
+  args.height = args.inner_height;
   args.num_mpi_threads = MPIUtils::get_size();
+  args.inner_width = args.width / sqrt(args.num_mpi_threads);
+  args.inner_height = args.height / sqrt(args.num_mpi_threads);
+  args.program_type = "parallel";
   return args;
 }
 
