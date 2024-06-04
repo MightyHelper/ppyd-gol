@@ -25,7 +25,7 @@ def ss_1():
         suffixes=('_parallel', '_sequential')
     ).reset_index()
     merged_results['speedup'] = merged_results['its/ms_parallel'] / merged_results['its/ms_sequential']
-    fig, ax = plt.subplots(figsize=(14, 8))
+    fig, ax = plt.subplots()#figsize=(14, 8))
     for (_is,), group in merged_results.groupby(['config.is']):
         ax.plot(group['config.n_parallel'], group['speedup'], label=f"{_is}", marker='o')
     n_values = np.sort(merged_results['config.n_parallel'].unique())
@@ -52,7 +52,7 @@ def ss_2():
     ).reset_index()
     merged_results['speedup'] = (merged_results['its/ms_parallel'] / merged_results['its/ms_sequential']) * \
                                 merged_results['config.n_parallel']
-    fig, ax = plt.subplots(figsize=(14, 8))
+    fig, ax = plt.subplots()#figsize=(14, 8))
     for (_is,), group in merged_results.groupby(['config.is']):
         ax.plot(group['config.n_parallel'], group['speedup'], label=f"{_is}", marker='o')
     n_values = np.sort(merged_results['config.n_parallel'].unique())
