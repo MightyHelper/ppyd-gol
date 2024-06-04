@@ -73,14 +73,16 @@ def plot_speedup():
         if x < 0:
             continue
         ax.plot(os_values, [speedup(o_size, x) for o_size in os_values], color=palette[i], label=f'{x}' if x > 0 else 'Sequential')
+        ax.scatter(os_values, [speedup(o_size, x) for o_size in os_values], color=palette[i])
     plot_limits = ax.get_xlim(), ax.get_ylim()
     linear_reference = [x for x in os_values]
     ax.plot(os_values, linear_reference, label='Linear Reference', linestyle='--', color='red')
-    ax.legend(title='Nodes', loc='upper right', bbox_to_anchor=(1, 1))
+    ax.legend(title='Nodes', loc='upper left', bbox_to_anchor=(1, 1))
     ax.set_xlim(plot_limits[0])
     ax.set_ylim(plot_limits[1])
     ax.set_xlabel('Outer Size')
     ax.set_ylabel('Speedup')
+    plt.tight_layout()
     plt.savefig("data/speedup_in_os.png")
 
 def plot_efficiency():
@@ -91,14 +93,16 @@ def plot_efficiency():
         if x < 0:
             continue
         ax.plot(os_values, [efficiency(o_size, x) for o_size in os_values], color=palette[i], label=f'{x}' if x > 0 else 'Sequential')
+        ax.scatter(os_values, [efficiency(o_size, x) for o_size in os_values], color=palette[i])
     plot_limits = ax.get_xlim(), ax.get_ylim()
     linear_reference = [1 for x in os_values]
     ax.plot(os_values, linear_reference, label='Linear Reference', linestyle='--', color='red')
     ax.set_xlim(plot_limits[0])
     ax.set_ylim(0, 1.01)
-    ax.legend(title='Nodes', loc='upper right', bbox_to_anchor=(1, 1))
+    ax.legend(title='Nodes', loc='upper left', bbox_to_anchor=(1, 1))
     ax.set_xlabel('Outer Size')
     ax.set_ylabel('Efficiency')
+    plt.tight_layout()
     plt.savefig("data/efficiency_in_os.png")
 
 def plot_efficiency2():
@@ -109,14 +113,16 @@ def plot_efficiency2():
     for i, x in enumerate(os_values):
         values_ = [efficiency(x, n) for n in positive_n_values]
         ax.plot(positive_n_values, values_, color=palette[i], label=f'{x}')
+        ax.scatter(positive_n_values, values_, color=palette[i])
     plot_limits = ax.get_xlim(), ax.get_ylim()
     linear_reference = [1 for x in positive_n_values]
     ax.plot(positive_n_values, linear_reference, label='Linear Reference', linestyle='--', color='red')
     ax.set_xlim(plot_limits[0])
     ax.set_ylim(0, 1.01)
-    ax.legend(title='Outer size', loc='upper right', bbox_to_anchor=(1, 1))
+    ax.legend(title='Outer size', loc='upper left', bbox_to_anchor=(1, 1))
     ax.set_xlabel('Nodes')
     ax.set_ylabel('Efficiency')
+    plt.tight_layout()
     plt.savefig("data/true_efficiency_in_os.png")
 
 def plot_speedup2():
@@ -127,15 +133,17 @@ def plot_speedup2():
     for i, x in enumerate(os_values):
         values_ = [speedup(x, n) for n in positive_n_values]
         ax.plot(positive_n_values, values_, color=palette[i], label=f'{x}')
+        ax.scatter(positive_n_values, values_, color=palette[i])
     # Add linear reference
     plot_limits = ax.get_xlim(), ax.get_ylim()
     linear_reference = [x for x in positive_n_values]
     ax.plot(positive_n_values, linear_reference, label='Linear Reference', linestyle='--', color='red')
     ax.set_xlim(plot_limits[0])
     ax.set_ylim(plot_limits[1])
-    ax.legend(title='Outer size', loc='upper right', bbox_to_anchor=(1, 1))
+    ax.legend(title='Outer size', loc='upper left', bbox_to_anchor=(1, 1))
     ax.set_xlabel('Nodes')
     ax.set_ylabel('Speedup')
+    plt.tight_layout()
     plt.savefig("data/true_speedup_in_os.png")
 
 plot_speedup()

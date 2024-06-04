@@ -37,7 +37,6 @@ def ss_1():
     ax.set_xlabel('Number of Processes (n)')
     ax.set_ylabel('Efficiency')
     ax.legend(title='Cells per process', loc='upper left', bbox_to_anchor=(1, 1))
-    ax.grid(True)
     plt.tight_layout()
     plt.savefig("data/weak_scale_1.png")
 
@@ -64,7 +63,6 @@ def ss_2():
     ax.set_xlabel('Number of Processes (n)')
     ax.set_ylabel('Speedup')
     ax.legend(title='Cells per process', loc='upper left', bbox_to_anchor=(1, 1))
-    ax.grid(True)
     plt.tight_layout()
     plt.savefig("data/weak_scale_2.png")
 

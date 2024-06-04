@@ -1,0 +1,28 @@
+#  "rle": ["mini.rle"],
+#  "host": ["DGPC"],
+#  "n": [-1, 1, 4, 9, 16],
+#  "iw": [10, 100, 500, 1000],
+#  "ih": [10, 100, 500, 1000],
+#  "exec_index": list(range(5)),
+#  "time": [3],
+program: wandb_agent.py
+name: scaling3.2
+method: grid
+parameters:
+  rle:
+    values: ["mini.rle"]
+  host:
+    values: ["DGPC"]
+  n:
+    values: [-1, 1, 4, 9, 16]
+  os_index:
+    values: [1, 2, 3, 6, 9, 20, 30, 59, 84, 187, 270] # 144x^2
+  exec_index:
+    values: [0, 1, 2, 3, 4]
+  time:
+    values: [90]
+command:
+- ${env}
+- /home/federico/anaconda3/envs/main/bin/python3
+- ${program}
+- ${args}
