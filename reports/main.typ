@@ -63,8 +63,15 @@
   #if false [#str(txt).split(" ").len() words] else []
 ]
 #set math.equation(supplement: "Formula")
-
-// end settings ----------------------------------------------------------------------
+#set pagebreak(weak: true)
+// #set page(background: image("images/game_of_life_a4_clustered.png"))
+//ese fondo para la presentación sounds good, pero no para el impreso, es gastar tinta al dope jaja
+// ni el virtual darling, oki
+// pero si en la presentacion
+// end settings 
+// yes <3
+// quería hacer algo jij
+//----------------------------------------------------------------------
 #title[Parallel Implementation of Conway's Game of Life]
 
 #text(size: 12pt, weight: "bold")[Micaela Del Longo, Federico Williamson]
@@ -73,7 +80,7 @@
 // la profe pide esto https://aulaabierta.ingenieria.uncuyo.edu.ar/pluginfile.php/161671/mod_resource/content/4/RequisitosPresentacionInforme_2023.pdf
 
 #text(style: "italic")[
-  *Abstract:* #count("This work proposes a parallel implementation of Conway's Game of Life, a classic cellular automaton, using the Message Passing Interface (MPI). This approach aims to exploit the inherent parallelism of the game to efficiently distribute computation across multiple processes, thereby harnessing the power of modern parallel computing architectures.")
+  *Abstract:* This work proposes a parallel implementation of Conway's Game of Life, a classic cellular automaton, using the Message Passing Interface (MPI). This approach aims to exploit the inherent parallelism of the game to efficiently distribute computation across multiple processes, thereby harnessing the power of modern parallel computing architectures. The authors show that decent speedup and efficiency can be achieved using these techniques, however further exploration and optimisations could lead to even lower base compute times.
   
   *Keywords:* Conway's Game of Life, MPI, Domain decomposition, Master-Worker algorithm.
 ]
@@ -113,7 +120,7 @@ In @GoL, a brief explanation of the game's rules and mechanics will be provided.
 Following this, @pseudocode offers a step-by-step breakdown of the algorithm's key components and operations.
 The subsequent @parallel-analysis will explore strategies for parallelising said algorithm.
 @parallel-impl describes the parallel design and implementation of Game of Life. The tests conducted on the implementations are detailed in @exp-design, its results and their analysis are discussed in @performance. Finally, in @conclusion a conclusion is provide.
-In @appendix, detailed information regarding the initial state representation (@appendix-1) and instructions for compiling and executing the source code (@appendix-2) will be provided.
+In @appendix, detailed information regarding the initial state representation, instructions for compiling and executing the source code, and additional figures are provided.
 
 /* #to-verify[
   To evaluate the performance of our MPI implementation, a series of experiments on various parallel computing platforms, ranging from multicore CPUs to distributed memory clusters, were conducted. Scalability, load balancing, and overhead characteristics under different problem sizes and MPI configurations were analysed. The results demonstrate significant speed-up compared to the sequential version, highlighting the effectiveness of MPI in harnessing parallelism in Conway's Game of Life.
@@ -123,7 +130,7 @@ In @appendix, detailed information regarding the initial state representation (@
 
 = Game of Life <GoL>
 
-Conway's Game of Life is a cellular automaton that operates on a grid of cells, each of which can be in one of two states: _alive_, represented by a white cell, or _dead_, represented by a black cell. At each time step, the transitions rules displayed in @rules, herein explained, are applied:  //@mica me hace un poco de ruido pero lo uniste muy bien (el comment es más para mí por si se me ocurre algo)
+Conway's Game of Life is a cellular automaton that operates on a grid of cells, each of which can be in one of two states: _alive_, represented by a white cell, or _dead_, represented by a black cell. At each time step, the transitions rules displayed in @rules, herein explained, are applied:
 
 + *Birth*: A dead cell with exactly three live neighbours#footnote[A neighbour is defined as any adjacent cell, including diagonals. See @neighbours] becomes alive (is "born") in the next generation.
 
@@ -170,7 +177,7 @@ As discussed in the introduction, this paper proposes to apply domain decomposit
 Domain decomposition is a natural choice because cells are only 
 related to directly adjacent cells. This means that they only need to know about neighbouring locations to compute their next state.
 
-This makes domain decomposition almost trivial. Since it is only required a ghost layer#footnote[To be able to compute the short-range interactions, MPI processes need not only access to the data of cells they "own" but also information about cells from neighbouring subdomains, referred to as _"ghost"_ atoms @LammpsCommunication.] of adjacent neighbours every time step for each node. All internal cells can be computed with no extra information.
+This makes domain decomposition almost trivial. Since it is only required a ghost layer#footnote[To be able to compute the short-range interactions, MPI processes need not only access to the data of cells they "own" but also information about cells from neighbouring subdomains, referred to as _"ghost"_ cells @LammpsCommunication.] of adjacent neighbours every time step for each node. All internal cells can be computed with no extra information.
 
 #figure(
   box(
@@ -179,11 +186,11 @@ This makes domain decomposition almost trivial. Since it is only required a ghos
     clip: true,
     width: 70%,
   ),
-  caption: [Cells distributed among processes. In light grey are shown the ghost cells and in red, the internal cells.]) <ghost>
+  caption: [Cells distributed among processes. In light grey are shown the ghost cells and, in red, the internal cells.]) <ghost>
 
 The implementation of these strategies is not trivial, as it requires that each node (i) is aware of its local grid partition border and (ii) communicates with its neighbouring nodes in order to exchange boundary information. This exchange is crucial for ensuring that each node has the necessary data to compute the next generation correctly.
 
-In this work, grid domain decomposition will be the primary method applied. If time permits Horizontally striped and vertically striped domain decomposition will also be implemented for comparative analysis.
+In this work, grid domain decomposition will be the primary method applied. If time permits, Horizontally striped and vertically striped domain decomposition will also be implemented for comparative analysis.
 
 This is due to grid domain decomposition being more promising when it comes to scaling. As the number of cells computed by a process increases, this strategy ensures that the perimeter stays lower compared to the area.
 
@@ -205,7 +212,7 @@ Vertically striped domain decomposition divides the grid into vertical strips, a
   grid(
     columns: 3,
     rows: 2,
-    column-gutter: 6%,
+    column-gutter: 2%,
     row-gutter: 1%,
     image("images/Grid_domain_decomposition.png", width: 100%),
     image("images/Horizontally_striped_domain_decomposition.png", width: 100%),
@@ -267,9 +274,9 @@ RCB is a "tiling" method which does not produce a logical regular grid of proces
   ]
 ) <load-balance>
 
-Grid balancing, on the other hand, involves organising computational resources in a structured grid-like manner to distribute the workload evenly across the system. Unlike RCB (Recursive Coordinate Bisection), which employs irregular sub-boxes, grid balancing typically involves dividing the simulation domain into a logical grid of processors.
+Grid balancing, on the other hand, involves organising computational resources in a structured grid-like manner to distribute the workload evenly across the system. Unlike RCB, which employs irregular sub-boxes, grid balancing typically involves dividing the simulation domain into a logical grid of processors.
 
-Currently, there are no plans of implementing load balancing. However, if during optimisation it is found that processing can be restricted to areas with live cells (e.g., using a quadtree), then load balancing may be considered.
+Currently, there are no plans of implementing load balancing. However, if during optimisation it is found that processing can be restricted to areas with live cells (e.g., using a quad tree), then load balancing may be considered.
 
 = Parallel Design and Implementation <parallel-impl>
 
@@ -282,7 +289,7 @@ Pseudocódigo secuencial y pseudocódigo paralelo/distribuido propuesto.
 Código fuente de la versión paralelo/distribuida. Si fuese el caso, actualizar también la versión secuencial (sólo si hubo cambios desde la entrega anterior).
 */
 
-As detailed in the previous sections, the parallel implementation employs grid domain decomposition. Specifically, the chosen algorithm model is the master-worker model. Furthermore, MPI (Message Passing Interface) was selected for communication, using a message-passing approach. At this stage, however, no load balancing strategy has been applied.
+As detailed in the previous sections, the parallel implementation employs grid domain decomposition. Specifically, the chosen algorithm model is the master-worker model. Furthermore, MPI was selected for communication, using a message-passing approach. At this stage, however, no load balancing strategy has been applied.
 
 The parallel algorithm does not significantly differ from the sequential implementation. @gol-par shows how to apply the sequential implementation across multiple processes to effectively simulate a larger domain.
 
@@ -309,15 +316,15 @@ Most of the code from the sequential version was recycled and used here. However
 From testing these aforementioned changes, it was apparent that the code worked, but the performance was suboptimal and significantly #footnote[On the order of #calc.round(total_seq / total_par_old * 100, digits: 2)%.] slower than the sequential version.
 This was mainly due to a very large proportion of time being taken up by communication and idle time#footnote[The computation time to total time ratio was of  about #calc.round(com_par_old / total_par_old * 100, digits: 2)%.].
   
-Taking that into account, the code was changed so that now the processes first build a list of messages to send each other node and then send an array of coordinate-value pairs. This substantially reduces communication time by reducing the MPI communication overhead.
+Taking that into account, the code was changed so that now the processes first build a list of messages to send to each other node and then send an array of coordinate-value pairs. This substantially reduces communication time by reducing the MPI communication overhead.
 
-However, the main optimisation was implementing a cache for _global tag-to-local_ coordinate translation. This cache was used when receiving incoming coordinate–value pairs from Moore-adjacent processes. The former implementation was a brute-force approach that tried all possible local coordinates in order to obtain the corresponding global tag and return the appropriate mentioned coordinates.
+However, the main optimisation was implementing a cache for _global tag to local coordinate_ translation. This cache was used when receiving incoming coordinate–value pairs from Moore-adjacent processes. The former implementation was a brute-force approach that tried all possible _local coordinates_ in order to obtain the corresponding _global tag_ and return the appropriate mentioned coordinates.
 
 #figure(
   grid(
     columns: (auto, auto),
-    column-gutter: 2em,
-    row-gutter: 0.25em,
+    column-gutter: 2%,
+    row-gutter: 1%,
     image("images/global_tag.png"),
     image("images/local_coordinates.png"),
     [(a)],[(b)]
@@ -328,7 +335,7 @@ However, the main optimisation was implementing a cache for _global tag-to-local
   ]
 )
   
-Another issue was that the program occasionally hung after execution. This was caused by varying process speeds; during time-bounded execution, some processes would perform an extra iteration and then hit an `MPI_Barrier` inside the main loop. Since other processes had already exited the loop, the program would never finish. The solution was to add more communication: the master process#footnote[The one at rank 0 on `MPI_COMM_WORLD`.] now communicates to the other nodes after each iteration whether another iteration should be performed.
+Another issue was that the program occasionally hung after execution. This was caused by varying process speeds; during time-bounded execution, some processes would perform an extra iteration and then hit an `MPI_Barrier` inside the main loop. Since other processes had already exited the loop, the program would never finish. The solution was adding more communication: the master process#footnote[The one at rank 0 on `MPI_COMM_WORLD`.] now communicates to the other nodes after each iteration whether another iteration should be performed.
 
 #pagebreak()
 
@@ -382,7 +389,7 @@ To evaluate the performance and scalability of this parallel implementation of C
   caption: [Parameters for the parallel algorithm.]
 ) <par-param>
 
-Of note it is to state that the grid size is fully determined by the process count and the inner grid sizes via @size-eq for the case of a square.
+Of note, it is to state that the grid size is fully determined by the process count and the inner grid sizes via @size-eq for the case of a square.
 
 #math.equation(
   [$S_"grid" = S_"inner" dot sqrt(n)$],
@@ -434,8 +441,7 @@ The second sweep aimed to examine the effects of different grid sizes and proces
     [*Property*       ], [*Values*],
     [RLE              ], ["mini.rle"],
     [Processes Count  ], [-1, 1, 4, 9, 16],
-    [Inner Width      ], [10, 100, 500, 1000],
-    [Inner Height     ], [10, 100, 500, 1000],
+    [Overall Size Index#footnote[Overall Size ($S$) follows the formula $"S" = 144 dot "I" ^2$ where ($I$) is the Overall Size Index]     ], [1, 2, 3, 6, 9, 20, 30, 59, 84, 187, 270],
     [Execution Index  ], [0, 1, 2, 3, 4],
     [Time (in minutes)], [3]
   ),
@@ -444,13 +450,13 @@ The second sweep aimed to examine the effects of different grid sizes and proces
 
 
 #figure(
-  image("images/W&B_scaling.png"),
+  image("images/W&B_scaling3.2.png"),
   caption: [
-    The detailed in @sweep2 as a parallel coordinates plot.
+    The sweep detailed in @sweep2 as a parallel coordinates plot.
   ]
 )
 
-In the previous tables, the '-1' value for _Processes Count_ indicates that the sequential version of the algorithm was run. This serves as a baseline to compare the performance of the parallel implementation against the traditional single-process execution. Each test was run five times to ensure the results' reliability and consistency. The Execution Index parameter indicates which run of the test it is, ranging from 0 to 4.
+In the previous tables (@sweep1, @sweep2), the '-1' value for _Processes Count_ indicates that the sequential version of the algorithm was run. This serves as a baseline to compare the performance of the parallel implementation against the traditional single-process execution. Each test was run five times to ensure the results' reliability and consistency. The Execution Index parameter indicates which run of the test it is, ranging from 0 to 4.
 
 The decisions behind these choices are further explained in @objectives.
 
@@ -487,19 +493,30 @@ To assess how well the workload is distributed across the computing resources, t
   ] <to>
 ]
 
-The scalability of the parallel implementation, is measured by:
-
+// @mica: Modifique esto
 #block(breakable: false)[
+The scalability of the parallel implementation, is measured by:
 - *Speedup $S$*: The ratio of the execution time of the sequential algorithm to the parallel algorithm. It is calculated with @speedup, where $"Ips"_s$ and $"Ips"_p$ are the number of iterations-per-second of the sequential and parallel model, respectively. 
+  Note that we use the parallel over the sequential, as when dealing with iterations _per second,_ it becomes necessary to invert the formula. A proof for this statement can be seen in @speedup3, where the _sequential_ seconds are divided by the _parallel_ seconds.
   #math.equation(block: true, numbering: "(1)")[
-    $S = ("Ips"_s)/("Ips"_p)$
-  ]<speedup>
+    $S = ("Ips"_p)/("Ips"_s)$
+  ] <speedup>
+  #math.equation(block: true, numbering: "(1)")[
+    $S = I_p/s_p div I_s/s_s$
+  ] <speedup1>
+  #math.equation(block: true, numbering: "(1)")[
+    $S = I_p/s_p dot s_s/I_s$
+  ] <speedup2>
+  #math.equation(block: true, numbering: "(1)")[
+    $S = (I_p bold(s_s)) / (bold(s_p) I_s)$
+  ] <speedup3>
 ]
+
 - *Efficiency*: The speedup divided by the number of processes.
 
 == Objectives <objectives>
 
-This subsection explains the reasoning behind choosing the parameters and metrics described in the previous sub-sections.
+This subsection explains the reasoning behind choosing the parameters and metrics described in the previous subsections.
 
 To determine if the computation time is independent of the initial live cell count, experiments were run with different Run Length Encoded (RLE) patterns: one with a basic input having live cells in the single digits ("mini.rle") and another in several hundreds ("c4-diag-switch-engines.rle").
 Furthermore, the process count was varied while keeping the grid size constant to gauge the strong scaling of the implementation.
@@ -521,7 +538,7 @@ La entrega a realizar consiste en un pequeño informe que debe incluir:
 
 == Execution Environment
 
-The sweeps described previously described in @sweeps were run on only one laptop  ("DGPC"), its characteristics are detailed in @DGPC. 
+The sweeps described previously described in @sweeps were run on only one laptop ("DGPC"), its characteristics are detailed in @DGPC. 
 
 #figure(
   table(columns: 2, align: (center, left),
@@ -546,56 +563,66 @@ The sweeps described previously described in @sweeps were run on only one laptop
 - Para cada índice de rendimiento debe incluirse el análisis, la reflexión realizada y las conclusiones a las que han podido llegar.
 */
 
+Using the results from the *first sweep* (@sweep1), the deviation in iterations-per-second from those obtained with the initial state representation "mini.rle" was calculated. @sweep1-fig shows that the deviation was found to be less than 10%, leading to the conclusion that computation time is independent of the initial live cell count provided by different Run Length Encoded (RLE) patterns.
+
+#figure(
+  image("images/results/file.png"),
+  caption: [Bar chart comparing the iterations-per-second relative to the "mini.rle".]  
+) <sweep1-fig>
+
 The following analysis was done with results obtained from the *second sweep* execution (@sweep2).
 
-As described previously, to evaluate the _weak scaling_, the number of processes and the grid size were increased proportionally. In the resulting graphs, it can be appreciated how the speed up improves with the number of cells per process. On the other hand, efficiency decreases with an increasing number of processes. However, the rate of this decrease diminishes as the number of cells per process rises.
+As described previously, to evaluate the _weak scaling_, the number of processes and the grid size were increased proportionally. In the resulting graphs (@weak), it can be appreciated how the speed up improves with the number of cells per process. On the other hand, efficiency decreases with an increasing number of processes. However, the rate of this decrease diminishes as the number of cells per process rises.
 
 #figure(
-  image("images/results/weak_scale_2.png"),
-  caption: [Speedup obtained when evaluating weak scaling.]  
-) <weak-speed>
+  grid(columns: (auto), row-gutter: 0.5%,
+    image("images/results/weak_scale_2.png"),
+    [#align(center+horizon)[(a)]],
+    image("images/results/weak_scale_1.png"),
+    [#align(center+horizon)[(b)]]
+  ),
+  caption: [
+    Speedup (a) and efficiency (b) obtained when evaluating weak scaling.
+  ]
+) <weak>
+
 
 #figure(
-  image("images/results/weak_scale_1.png"),
-  caption: [Efficiency obtained when evaluating weak scaling.]  
-) <weak-efficiency>
+  grid(columns: (auto), row-gutter: 0.5%,
+    image("images/results/true_speedup_in_os.png"),
+    [(a)],
+    image("images/results/true_efficiency_in_os.png"),
+    [(b)]
+  ),
+  caption: [
+    Speedup (a) and efficiency (b) obtained when evaluating strong scaling.
+  ]
+) <strong>
 
-// Conversely, to evaluate the _strong scaling_ process count was varied while keeping the total grid size constant.
 
-// #to-do[speedup]
-// #to-do[efficiency]
+Conversely, to evaluate the _strong scaling_ process count was varied while keeping the total grid size constant (See @strong). Similarly to weak scaling, the speedup improves with the number of cells per process, and efficiency decreases with an increasing number of processes. With this rate diminishing as the number of cells per process rises.
 
-@ips-os compares the outer (total) size with the achieved number of millisecond per iterations. The number of milliseconds per iterations increases with the outer size, and it can be seen that increasing number of nodes increases performance.
+// se comportó de forma similar al weak--->podemos robar
+@ips-os compares the outer (total) size with the achieved number of millisecond per iterations. The number of milliseconds per iterations increases with the outer size, and it can be seen that increasing number of nodes increases performance (since it reduces the necessary time until the next iteration).
 
 #figure(
   image("images/results/linear_in_os.png"),
   caption: [Scatter plot comparing the milliseconds per iterations with the outer size.]  
 ) <ips-os>
 
-Using the results from the *first sweep* (@sweep1), the deviation in iterations-per-second from those obtained with the initial state representation "mini.rle" was calculated. The deviation was found to be less than 1%, leading to the conclusion that computation time is independent of the initial live cell count provided by different Run Length Encoded (RLE) patterns.
 
-#figure(
-  image("images/results/file.png"),
-  caption: [Bar chart comparing the iterations-per-second relative to the "mini.rle".]  
-)
-
-@comm-idle illustrates the percentage of time allocated to computation, communication, and idle states across the *two sweeps*. It is evident that as the number of processes increases, the time spent on communication and idle states also increases. However, this time does not exceed the time spent on computation.
+@comm-idle illustrates the percentage of time allocated to computation, communication, and idle states across Sweep 2 described in @sweep2. It is evident that as the number of processes increases, the time spent on communication and idle states also increases. However, this time does not exceed the time spent on computation.
 
 #figure(
   image("images/results/communication.png"),
   caption: [Bar chart comparing allocated to computation, communication, and idle states.]  
 ) <comm-idle>
 
+In @comm-idle, "Unknown" actually refers to the known time spent storing the data needed for the posterior execution analysis.
 
 /*
 - La documentación de posibles modificaciones en el código y/o en los experimentos, que consideren les permitirá mejorar el rendimiento del programa, y/o analizar el comportamiento desde otro punto de vista (por ejemplo: aislando secciones limitantes, cambiando estrategias, mejorando alguna política, etc.). Pueden proponer todas las mejoras que consideren, aunque se trabaje sólo en alguna de ellas, dadas las restricciones de tiempo del semestre. 
 */
-
-// - We could try to avoid computing empty areas
-//   - If we do, We could add load balancing
-// - We could not compute the state of ghost atoms
-// - We could have multiple layers of ghost atoms
-
 
 = Conclusions <conclusion>
 
@@ -605,26 +632,28 @@ En las conclusiones cada grupo debe enumerar las conclusiones a las que ha arrib
 En esta sección pueden mencionarse y listarse posibles mejoras para solventar los problemas o debilidades que hayan podido detectar durante el análisis. Deben estar debidamente justificadas.
 */
 
-Overall, the results obtained showcase an improvement over the sequential implementation. However, further experiments are needed to provide a more comprehensive comparison. 
+
+Overall, the results obtained showcase an improvement over the sequential implementation. However, further experiments are needed to provide a more comprehensive comparison.
+
+We observed fairly good efficiency when the system size was large. This was particularly evident when the inner width and height were large enough that communication was not the predominant time sink. Our analysis of the communication and idle times reveals that as node count increases, communications also grow significantly. Exploring further limits on this aspect would be ideal.
 
 In future implementations, expanding the scope to include experiments across different hardware configurations could offer valuable insights into the system's performance variability.
 
-== Possible Improvements
+#pagebreak()
+
+=== Future Improvements
 
 To enhance the performance and efficiency of this parallel implementation, several potential improvements can be considered:
 
-- Implementing a strategy to *skip computations in areas without live cells* could significantly reduce unnecessary processing. If this approach is adopted, integrating a load-balancing mechanism would ensure an even distribution of computational workload across processes.
+Implementing a strategy to skip computations in areas without live cells could significantly reduce unnecessary processing. If this approach is adopted, integrating a load-balancing mechanism would ensure an even distribution of computational workload across processes.
 
-- *Not computing the state of ghost atoms*, streamlining the algorithm and reducing computational overhead.
+Not computing the state of ghost atoms could streamline the algorithm and reduce computational overhead.
 
-- *Adding multiple layers of ghost atoms* might improve the efficiency of boundary cell computations, potentially leading to better overall performance as more iterations may be accomplished without the need to communicate.
-
+Adding multiple layers of ghost atoms might improve the efficiency of boundary cell computations, potentially leading to better overall performance as more iterations may be accomplished without the need to communicate.
 
 = References
 
 #bibliography("refs.bib")
-
-// #to-do[fix references. (los links tienen q mostrar cuando accedimos)]
 
 // -----------------------------------------------------------------------------------
 
@@ -661,7 +690,7 @@ The file format utilised to store the initial state is RLE (Run Length Encoding)
   image("images/RLE-Picture.png", width: 100%),
   caption: [The plotted pattern of @sample-rle.])
 
-In this format, each line is delimited by '`$`'. Within each line, the cells are represented as a sequence of characters where '`b`' denotes a black o dead cell, and '`o`' denotes a white or alive cell. Additionally, numeric characters are used to indicate the number of consecutive cells with the same state. For example, '`3o`' indicates three live cells in a row, and '`2b`' represents two dead cells in a row.
+In this format, each line is delimited by '`$`'. Within each line, the cells are represented as a sequence of characters where '`b`' denotes a white /*black o dead*/ cell, and '`o`' denotes a black /*white or alive*/ cell. Additionally, numeric characters are used to indicate the number of consecutive cells with the same state. For example, '`3o`' indicates three live cells in a row, and '`2b`' represents two dead cells in a row.
 
 RLE encoding also includes metadata such as the width and height of the pattern, as well as any additional rules that may apply to the pattern's evolution. This metadata ensures that the pattern can be correctly interpreted and simulated within the rules.
 
@@ -669,7 +698,7 @@ RLE encoding also includes metadata such as the width and height of the pattern,
 
 == Build and Execution <appendix-2>
 
-This project *requires* C++ standard version 23, and at least CMake 3.28. Additionally, it is necessary an MPI-4.1 compatible implementation of MPI.
+This project *requires* C++ standard version 23, and at least CMake 3.28. Additionally, an MPI-4.1 compatible implementation of MPI is necessary.
 
 #heading(outlined: false, level: 3, [Build])
 
@@ -752,6 +781,23 @@ Having previously created a WANDB account, the steps are as follows:
   ```sh
   nohup <sweep agent cmd> &
   ```
+#block(breakable: false)[
+  
+== Additional Images
+#figure(
+  grid(columns: (auto),
+    row-gutter: 0.15%,
+    image("images/results/speedup_in_os.png", width: 99.5%),
+    [(a)],
+    image("images/results/efficiency_in_os.png", width: 99.5%),
+    [(b)]
+  ),
+  caption: [
+    Speedup (a) and efficiency (b) obtained when evaluating strong scaling with respect to system size in sweep 2 (@sweep2).
+  ]
+) <strong_os>
+
+]
 ]
 
 /*

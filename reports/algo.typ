@@ -68,9 +68,9 @@
           let myCmt = x=>Cmt(text(fill: rgb(56, 76, 107), x))
           Function("Parallel-Conway-Game-of-Life", {
             myCmt[Register MPI Datatypes]
-            myCmt[Initialize sub-canvas]
-            myCmt[Construct 2d Cartesian Comunicator]
-            myCmt[Obtain adjacent proceses]
+            myCmt[Initialise sub-canvas]
+            myCmt[Construct 2d Cartesian Communicator]
+            myCmt[Obtain adjacent processes]
             myCmt[Load initial state]
             For(cond: $"iter in steps"$, {
               myCmt[Update ghost cells]
