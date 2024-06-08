@@ -111,11 +111,11 @@ void Canvas::load_file(const std::string &str, int dx, int dy) {
 }
 
 void Canvas::load_file(const char *path, int dx, int dy) {
-	const std::function<void(unsigned int, unsigned int, bool)> spawn = [this](unsigned int x, unsigned int y,
-	                                                                           bool value) {
-		at(x, y) = value;
-	};
-	StateLoader::load_from_file(path, dx, dy, spawn);
+  const std::function<void(unsigned int, unsigned int, bool)> spawn = [this](unsigned int x, unsigned int y,
+                                                                             bool value) {
+      at(x, y) = value;
+  };
+  StateLoader::load_from_file(path, dx, dy, spawn);
 }
 
 
@@ -156,6 +156,13 @@ void Canvas::iter() {
 	auto temp = cells;
 	cells = buffer;
 	buffer = temp;
+}
+
+void Canvas::iter2() {
+  step_all();
+  auto temp = cells;
+  cells = buffer;
+  buffer = temp;
 }
 
 /*
@@ -209,20 +216,24 @@ void Canvas::step_all() const {
 	for (unsigned int x = 0; x < width; x++) for (unsigned int y = 0; y < height; y++) buf(x, y) = step(x, y);
 }
 
+void Canvas::step_all2() const {
+  for (unsigned int x = 1; x < width - 1; x++) for (unsigned int y = 1; y < height - 2; y++) buf(x, y) = step(x, y);
+}
+
 /*
  * Canvas constructor: This function initializes the canvas with the specified width and height. It also
  * initializes the cells and buffer vectors.
  * */
 Canvas::Canvas(unsigned int width, unsigned int height)
-		: width(width), height(height) {
-	cells = new vector<bitset<BIT_GROUP_SIZE>>;
-	buffer = new vector<bitset<BIT_GROUP_SIZE>>;
-	cells->reserve(width * height / BIT_GROUP_SIZE + 1);
-	buffer->reserve(width * height / BIT_GROUP_SIZE + 1);
-	for (unsigned int i = 0; i < width * height / BIT_GROUP_SIZE + 1; i++) {
-		cells->emplace_back();
-		buffer->emplace_back();
-	}
+  : width(width), height(height) {
+  cells = new vector<bitset<BIT_GROUP_SIZE>>;
+  buffer = new vector<bitset<BIT_GROUP_SIZE>>;
+  cells->reserve(width * height / BIT_GROUP_SIZE + 1);
+  buffer->reserve(width * height / BIT_GROUP_SIZE + 1);
+  for (unsigned int i = 0; i < width * height / BIT_GROUP_SIZE + 1; i++) {
+    cells->emplace_back();
+    buffer->emplace_back();
+  }
 }
 
 /*

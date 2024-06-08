@@ -39,11 +39,15 @@ public:
 
     void iter();
 
+    void iter2();
+
     [[nodiscard]] unsigned int get_total(unsigned int x, unsigned int y) const;
 
     [[nodiscard]] unsigned int step(unsigned int x, unsigned int y) const;
 
     void step_all() const;
+
+    void step_all2() const;
 
     Canvas(unsigned int width, unsigned int height);
 

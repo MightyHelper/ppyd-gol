@@ -140,5 +140,5 @@ void MPICanvas::comunicate() {
 void MPICanvas::iter() {
   comunicate();
   MPI_Barrier(MPI_COMM_WORLD);
-  canvas->iter();
+  canvas->iter2();
 }
